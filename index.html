@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Trail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#dff0fb;--paper:#fff;--ink:#2b2118;--soft:#5d6470;--line:#c9b79c;--accent:#2f7d4f;--wood:#7a4f27;
+--green:#2e9e5b;--red:#d64545;--amber:#f0a500;--gray:#cfd8d4;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:linear-gradient(180deg,#cfe9fb 0%,#e4f3f0 45%,#e3f2d9 100%) fixed;color:var(--ink);font-family:"Andika","Century Gothic","Trebuchet MS",sans-serif;font-size:17px;line-height:1.4;
+ padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.wrap{max-width:820px;margin:0 auto;padding:18px 18px 60px}
+[hidden]{display:none!important}
+h1{font-family:"Fredoka","Andika",sans-serif;font-size:clamp(1.8rem,5vw,2.4rem);margin:6px 0 2px}
+h2{font-family:"Fredoka","Andika",sans-serif}
+.banner{position:relative;border-radius:24px;overflow:hidden;border:4px solid var(--ink);box-shadow:0 6px 0 var(--ink);margin-bottom:16px;background:#bfe3fa}
+.banner svg{display:block;width:100%;height:auto}
+.banner h1{position:absolute;left:0;right:0;top:2%;text-align:center;margin:0;font-size:clamp(2.2rem,9vw,3.6rem);color:#fff;letter-spacing:1px;
+ text-shadow:0 4px 0 var(--wood),0 7px 14px rgba(0,0,0,.25)}
+.banner h1 span{display:inline-block}
+.banner h1 span:nth-child(odd){transform:rotate(-4deg)}.banner h1 span:nth-child(even){transform:rotate(3deg);color:#ffe9a8}
+.trail{position:relative;height:16px;border-radius:99px;background:#e9dcc6;border:3px solid var(--wood);margin:26px 14px 8px 6px}
+.trail i{display:block;height:100%;border-radius:99px;background:repeating-linear-gradient(90deg,#2f7d4f 0 14px,#3c9460 14px 28px)}
+.trail .boot{position:absolute;top:-22px;font-size:1.5rem;transform:translateX(-50%)}
+.trail .flag{position:absolute;right:-14px;top:-24px;font-size:1.5rem}
+h2{font-size:1.3rem;margin:0 0 10px}
+.sub{color:var(--soft);margin:0 0 18px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:4px solid var(--amber);outline-offset:2px}
+.btn{background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:10px 18px;font-weight:700;box-shadow:0 4px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.go{background:var(--accent);color:#fff;border-color:var(--ink)}
+.btn.small{padding:6px 12px;font-size:.9rem;box-shadow:0 3px 0 var(--ink)}
+.btn.warn{background:#fde8e8}
+.panel{background:var(--paper);border:3px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=number],textarea{font:inherit;padding:10px 12px;border:3px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+input[type=text]{flex:1;min-width:160px}
+textarea{width:100%;min-height:110px}
+.stu{display:flex;align-items:center;gap:10px;background:var(--paper);border:3px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.stu:hover{border-color:var(--accent)}
+.stu .name{font-weight:700;font-size:1.15rem}
+.stu .meta{color:var(--soft);font-size:.9rem}
+.stu .grow{flex:1}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+.chip{border-radius:999px;padding:5px 12px;font-weight:700;font-size:.9rem;border:2px solid transparent}
+.chip.g{background:#d7f0e0;color:#17653a}.chip.a{background:#fdeabd;color:#7a5200}.chip.r{background:#f9d6d6;color:#8f2323}.chip.n{background:#e3e9e6;color:#4a5a54}
+.grid{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 14px}
+.w{padding:3px 8px;border-radius:8px;font-size:.82rem;font-weight:700;background:var(--gray);color:#3c4a45}
+.w.known{background:var(--green);color:#fff}.w.learning{background:var(--amber);color:#2a1a00}.w.pending{background:var(--red);color:#fff}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--soft);margin-bottom:8px}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.badge{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:5px 14px;font-weight:700;font-size:.95rem}
+.badge.learn{background:var(--accent)}.badge.rev{background:#6a4bb0}
+.card{background:#fffdf6;border:5px solid var(--wood);border-radius:28px;box-shadow:0 8px 0 #4f3216;min-height:min(46vh,320px);
+ display:flex;align-items:center;justify-content:center;margin:12px 0 10px;padding:18px}
+.word{font-size:clamp(4rem,19vw,9rem);line-height:1;text-align:center;word-break:break-word}
+.count{text-align:center;color:var(--soft);margin-bottom:12px;min-height:1.4em}
+.bar{height:10px;background:#d4e4dc;border-radius:99px;overflow:hidden;margin:0 auto 16px;max-width:420px}
+.bar i{display:block;height:100%;background:var(--accent);width:0}
+.answers{display:flex;gap:16px;justify-content:center;margin:6px 0 14px}
+.ans{flex:1;max-width:260px;border:4px solid var(--ink);border-radius:22px;padding:18px 10px;font-size:1.6rem;font-weight:700;box-shadow:0 6px 0 var(--ink);color:#fff}
+.ans:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.ans.yes{background:var(--green)}.ans.no{background:var(--red)}
+.starline{text-align:center;font-weight:700;font-size:1.1rem;color:#8a5a00;margin:0 0 8px}
+.starline.bump{animation:bump .35s}
+@keyframes bump{40%{transform:scale(1.25)}}
+.float{position:fixed;left:50%;top:38%;font-size:2rem;font-weight:700;color:#f0a500;text-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:none;z-index:30;animation:flo .9s ease-out forwards}
+@keyframes flo{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-80px)}}
+.w .st{font-weight:400;margin-left:3px;font-size:.75rem}
+.hint{text-align:center;color:var(--soft);font-size:.95rem;margin:0 0 12px}
+.modal{position:fixed;inset:0;background:rgba(20,30,50,.6);display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}
+.mbox{background:#fff;border:4px solid var(--ink);border-radius:24px;padding:24px;max-width:480px;width:100%;text-align:center;box-shadow:0 8px 0 var(--ink)}
+.mbox .word{font-size:clamp(3.4rem,16vw,6rem);margin:8px 0 12px}
+.mbox p{margin:6px 0 16px}
+.sumlist{margin:0 0 10px;padding-left:0;list-style:none}
+.sumlist li{margin:6px 0}
+.status{color:var(--soft);font-size:.9rem;margin-top:8px}
+details summary{cursor:pointer;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HOME: student list -->
+<section id="home">
+  <div class="banner">
+    <svg viewBox="0 -70 800 370" aria-hidden="true">
+      <rect y="-70" width="800" height="370" fill="#bfe3fa"/>
+      <circle cx="660" cy="70" r="38" fill="#ffd76a"/>
+      <g fill="#fff" opacity=".9"><ellipse cx="130" cy="60" rx="55" ry="16"/><ellipse cx="170" cy="50" rx="35" ry="14"/><ellipse cx="520" cy="40" rx="45" ry="13"/></g>
+      <path d="M0 300 L180 110 L300 230 L430 80 L600 250 L700 170 L800 260 L800 300Z" fill="#8fb3c9"/>
+      <path d="M430 80 L462 114 L440 108 L426 126 L408 106Z M180 110 L206 138 L186 132 L172 146 L158 134Z" fill="#fff"/>
+      <path d="M0 300 Q200 190 400 240 T800 215 L800 300Z" fill="#5fae6b"/>
+      <path d="M0 300 Q260 230 520 268 T800 250 L800 300Z" fill="#3c9460"/>
+      <path d="M90 300 Q210 262 330 276 T520 248 Q600 236 650 212" fill="none" stroke="#f3e2bf" stroke-width="12" stroke-linecap="round" stroke-dasharray="4 20"/>
+      <g transform="translate(650 150)"><rect x="-3" y="0" width="6" height="66" fill="#7a4f27"/><path d="M3 2 L52 16 L3 32Z" fill="#e2483d"/></g>
+      <g fill="#2f7d4f"><path d="M60 262 l18 -44 l18 44z"/><path d="M736 250 l16 -40 l16 40z"/><path d="M270 258 l14 -34 l14 34z"/></g>
+    </svg>
+    <h1><span>W</span><span>o</span><span>r</span><span>d</span> <span>T</span><span>r</span><span>a</span><span>i</span><span>l</span></h1>
+  </div>
+  <p class="sub">The student reads each word. Words they know are checked off. Words they miss are taught right away with incremental rehearsal.</p>
+  <div class="panel">
+    <h2>Students</h2>
+    <div class="row" style="margin-bottom:12px">
+      <input type="text" id="newName" placeholder="Student name" maxlength="30" autocomplete="off">
+      <button class="btn go" id="addBtn">Add student</button>
+    </div>
+    <div id="stuList"></div>
+    <p class="status" id="stuEmpty">No students yet. Add one above.</p>
+  </div>
+  <div class="panel">
+    <details>
+      <summary>How Word Trail works</summary>
+      <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
+      <p><b>Learn.</b> When a word is missed, say it together, then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
+      <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
+      <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
+      <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
+    </details>
+  </div>
+  <div class="panel">
+    <details>
+      <summary>Back up or move your students</summary>
+      <p>Copy the backup text and keep it somewhere safe, or paste a backup here to restore it on another device.</p>
+      <textarea id="backupBox" aria-label="Backup text"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" id="backupMake">Show backup</button>
+        <button class="btn small" id="backupCopy">Copy</button>
+        <button class="btn small warn" id="backupRestore">Restore from pasted backup</button>
+      </div>
+      <p class="status" id="backupMsg"></p>
+    </details>
+  </div>
+</section>
+
+<!-- STUDENT -->
+<section id="student" hidden>
+  <div class="top">
+    <button class="btn small" id="stuBack">Students</button>
+    <button class="btn small warn" id="stuReset">Reset this student</button>
+  </div>
+  <h1 id="stuName"></h1>
+  <div class="chips" id="stuChips"></div>
+  <div class="panel">
+    <div class="trail"><i id="trailFill"></i><span class="boot" id="trailBoot">🥾</span><span class="flag">🚩</span></div>
+    <div id="nextInfo" style="margin:12px 0"></div>
+    <div class="row">
+      <button class="btn go" id="startBtn">Start</button>
+      <button class="btn" id="reportBtn">Progress report</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label for="startAt">Check from word #</label>
+      <input type="number" id="startAt" min="1" max="300" style="width:90px">
+      <button class="btn small" id="startAtBtn">Set</button>
+    </div>
+    <p class="status" id="stuMsg"></p>
+  </div>
+  <div class="panel" id="reportPanel" hidden>
+    <h2>Progress report</h2>
+    <textarea id="reportBox" aria-label="Progress report" readonly></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn small" id="reportCopy">Copy</button></div>
+  </div>
+  <div class="panel">
+    <h2>All 300 words</h2>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--green)"></i>Known</span>
+      <span><i class="dot" style="background:var(--amber)"></i>Learned, still practicing</span>
+      <span><i class="dot" style="background:var(--red)"></i>Missed, not yet learned</span>
+      <span><i class="dot" style="background:var(--gray)"></i>Not checked</span>
+    </div>
+    <div class="grid" id="wordGrid"></div>
+  </div>
+</section>
+
+<!-- SESSION -->
+<section id="session" hidden>
+  <div class="top">
+    <button class="btn small" id="endBtn">End session</button>
+    <span class="badge" id="phase"></span>
+    <button class="btn small" id="undoBtn">Undo</button>
+  </div>
+  <div class="card"><div class="word" id="cardWord"></div></div>
+  <div class="count" id="cardCount"></div>
+  <div class="bar"><i id="barFill"></i></div>
+  <div class="starline" id="starLine"></div>
+  <div class="answers">
+    <button class="ans yes" id="yesBtn">Yes</button>
+    <button class="ans no" id="noBtn">No</button>
+  </div>
+  <p class="hint" id="cardHint"></p>
+</section>
+
+<!-- SUMMARY -->
+<section id="summary" hidden>
+  <h1>Session summary</h1>
+  <p class="sub" id="sumWho"></p>
+  <div class="panel"><ul class="sumlist" id="sumList"></ul></div>
+  <div class="row">
+    <button class="btn go" id="sumBack">Back to student</button>
+    <button class="btn" id="sumAgain">Keep going</button>
+  </div>
+</section>
+
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="mbox">
+    <div id="modalTitle" style="font-weight:700"></div>
+    <div class="word" id="modalWord"></div>
+    <p id="modalText"></p>
+    <div class="row" style="justify-content:center">
+      <button class="btn small" id="hearBtn">Hear it</button>
+      <button class="btn go" id="modalBtn">Continue</button>
+    </div>
+  </div>
+</div>
+<script>
+// ====================================================================
+// SETTINGS you can change
+// ====================================================================
+const MAX_ANCHORS      = 8;  // most known words mixed in around a new word
+const MIN_ANCHORS      = 2;  // known words needed before a rehearsal can run
+const DAYS_TO_KNOWN    = 3;  // different days a learned word must be read right to turn green
+const WARMUP_MAX       = 5;  // yellow words reviewed at the start of a session
+const PENDING_RUNS_MAX = 3;  // earlier-missed words relearned at the start of a session
+const TARGET_MISS_LIMIT= 3;  // misses on the new word before it is set aside for next time
+
+// Kearns high-frequency word list, words 1-300 (Texas Education Agency, 2021), same as High-Frequency Word Check
+const WORDS = "the to and of a in is I you it for that on was with are this be not as at he have from or they all but by your one can we his if will what about my do there an up had out when so no would more she were her like me some their other time has get them then people how see who just new into now been which only could know any these over than back him first very us go our good may make here two many also way did where use down home well after day think help find most work its made too little want right because much even each should through before long take look must off am around why come old last still need same man such got big next something another name water say world never great again those place read put school house part under while found own every away small year tell life three best really set high might went both thought came without few better always let book give end between left show thing sure top hard keep money free once white live room information yes page since group please number city men children head black until night large call play enough run today ever line food hand open try air family car real side far against lot course person took change anything light state saw red told feel however important system someone mother during full along game job together nothing seen list kind body care though special box order soon word buy sun done second yet country often start young story oh business above heard able almost land sound face four front point mean ask else stop learn street ago write problem bad everything maybe".split(" ");
+
+// ====================================================================
+// Storage (browser only, one device). Falls back to memory if blocked.
+// ====================================================================
+const KEY = "hfwCheckLearn_v1";
+let mem = null;
+function load() {
+  try { const r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch (e) {}
+  return mem || { students: [] };
+}
+let state = load();
+function save() { mem = state; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+const $ = id => document.getElementById(id);
+const today = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; };
+function shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; }
+function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+let curId = null, session = null;
+const cur = () => state.students.find(s => s.id === curId);
+function show(id) { for (const s of ["home", "student", "session", "summary"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+
+// Word entries: st.words[word] = { s: 'known'|'learning'|'pending', days, last, first }
+//   known    = read at the check, or learned and then read right on 3 days (green)
+//   learning = learned with rehearsal, still earning its days (yellow)
+//   pending  = missed, not learned yet (red)
+function awardStar(n) {
+  const S = session, st = cur(); if (!S || !n) return;
+  S.stars += n; st.stars = (st.stars || 0) + n;
+  const el = $("starLine"); el.textContent = `⭐ ${S.stars} today`; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+  const f = document.createElement("div"); f.className = "float"; f.textContent = "+" + n + " ⭐";
+  document.body.appendChild(f); f.addEventListener("animationend", () => f.remove());
+}
+function counts(st) {
+  const c = { known: 0, learning: 0, pending: 0 };
+  for (const k in st.words) c[st.words[k].s]++;
+  c.unchecked = WORDS.length - c.known - c.learning - c.pending;
+  return c;
+}
+
+// ====================================================================
+// HOME
+// ====================================================================
+function renderHome() {
+  const list = $("stuList"); list.innerHTML = "";
+  $("stuEmpty").hidden = state.students.length > 0;
+  state.students.forEach(st => {
+    const c = counts(st);
+    const row = document.createElement("div"); row.className = "stu";
+    row.innerHTML = `<div class="grow"><div class="name">${esc(st.name)}</div>
+      <div class="meta">${c.known} known · ${c.learning} practicing · ${c.pending} to learn · ⭐ ${st.stars || 0}</div></div>`;
+    const del = document.createElement("button"); del.className = "btn small"; del.textContent = "Delete";
+    del.onclick = e => {
+      e.stopPropagation();
+      if (del.dataset.armed) { state.students = state.students.filter(s => s.id !== st.id); save(); renderHome(); }
+      else { del.dataset.armed = 1; del.textContent = "Tap again to delete"; setTimeout(() => { del.dataset.armed = ""; del.textContent = "Delete"; }, 3000); }
+    };
+    row.appendChild(del);
+    row.onclick = () => { curId = st.id; renderStudent(); show("student"); };
+    list.appendChild(row);
+  });
+}
+function addStudent() {
+  const name = $("newName").value.trim(); if (!name) { $("newName").focus(); return; }
+  state.students.push({ id: "s" + Date.now(), name, nextIdx: 0, words: {} });
+  $("newName").value = ""; save(); renderHome();
+}
+$("addBtn").onclick = addStudent;
+$("newName").addEventListener("keydown", e => { if (e.key === "Enter") addStudent(); });
+$("backupMake").onclick = () => { $("backupBox").value = JSON.stringify(state); $("backupMsg").textContent = "Copy this text and keep it somewhere safe."; };
+$("backupCopy").onclick = async () => {
+  $("backupBox").value = JSON.stringify(state);
+  try { await navigator.clipboard.writeText($("backupBox").value); $("backupMsg").textContent = "Copied."; }
+  catch (e) { $("backupBox").select(); $("backupMsg").textContent = "Copy didn't work here. The text is selected, so press Ctrl+C or long-press and copy."; }
+};
+$("backupRestore").onclick = () => {
+  try {
+    const d = JSON.parse($("backupBox").value);
+    if (!d || !Array.isArray(d.students)) throw 0;
+    state = d; save(); renderHome(); $("backupMsg").textContent = `Restored ${d.students.length} student(s).`;
+  } catch (e) { $("backupMsg").textContent = "That doesn't look like a backup. Paste the full backup text and try again."; }
+};
+
+// ====================================================================
+// STUDENT PAGE
+// ====================================================================
+function renderStudent() {
+  const st = cur(); if (!st) return;
+  const c = counts(st);
+  $("stuName").textContent = st.name;
+  $("stuChips").innerHTML = `<span class="chip g">${c.known} known</span><span class="chip a">${c.learning} practicing</span><span class="chip r">${c.pending} to learn</span><span class="chip n">${c.unchecked} not checked</span><span class="chip a">⭐ ${st.stars || 0} stars</span>`;
+  const next = st.nextIdx < WORDS.length ? `Next word to check: <b>#${st.nextIdx + 1}</b>` : "Every word has been checked.";
+  const due = Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today()).length;
+  $("nextInfo").innerHTML = next + (due ? ` · ${due} practicing word${due === 1 ? "" : "s"} to review today` : "") + (c.pending ? ` · ${c.pending} missed word${c.pending === 1 ? "" : "s"} to learn` : "");
+  $("startBtn").textContent = Object.keys(st.words).length ? "Back on the trail" : "Hit the trail";
+  const pct = Math.min(100, st.nextIdx / WORDS.length * 100);
+  $("trailFill").style.width = pct + "%"; $("trailBoot").style.left = pct + "%";
+  $("startAt").value = st.nextIdx + 1;
+  $("reportPanel").hidden = true; $("stuMsg").textContent = "";
+  $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
+}
+$("stuBack").onclick = () => { renderHome(); show("home"); };
+$("stuReset").onclick = () => {
+  const b = $("stuReset");
+  if (b.dataset.armed) { const st = cur(); st.words = {}; st.nextIdx = 0; save(); b.dataset.armed = ""; b.textContent = "Reset this student"; renderStudent(); }
+  else { b.dataset.armed = 1; b.textContent = "Tap again to erase progress"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Reset this student"; }, 3000); }
+};
+$("startAtBtn").onclick = () => {
+  const n = parseInt($("startAt").value, 10);
+  if (!(n >= 1 && n <= WORDS.length)) { $("stuMsg").textContent = "Enter a word number from 1 to 300."; return; }
+  cur().nextIdx = n - 1; save(); renderStudent(); $("stuMsg").textContent = `Checking will continue from word #${n} ("${WORDS[n - 1]}").`;
+};
+function report(st) {
+  const L = k => Object.keys(st.words).filter(w => st.words[w].s === k).sort((a, b) => WORDS.indexOf(a) - WORDS.indexOf(b));
+  const c = counts(st);
+  return [`${st.name}, high-frequency words, ${today()}`,
+    `Checked through word #${st.nextIdx} of ${WORDS.length}`,
+    `Known (${c.known}): ${L("known").join(", ") || "none yet"}`,
+    `Learned, still practicing (${c.learning}): ${L("learning").map(w => `${w} (${st.words[w].days}/${DAYS_TO_KNOWN} days)`).join(", ") || "none"}`,
+    `Stars: ${st.stars || 0}`,
+    `Missed, not yet learned (${c.pending}): ${L("pending").join(", ") || "none"}`].join("\n");
+}
+$("reportBtn").onclick = () => { $("reportBox").value = report(cur()); $("reportPanel").hidden = false; };
+$("reportCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("reportBox").value); $("reportCopy").textContent = "Copied"; }
+  catch (e) { $("reportBox").select(); $("reportCopy").textContent = "Select and copy"; }
+  setTimeout(() => $("reportCopy").textContent = "Copy", 1800);
+};
+
+// ====================================================================
+// SESSION: check new words, learn missed words with incremental rehearsal
+// ====================================================================
+$("startBtn").onclick = startSession;
+function startSession() {
+  const st = cur(); if (!st) return;
+  session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
+    stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
+  show("session"); nextCard();
+}
+// Rehearsal for one word: rounds of  [new word + 1 known], [new word + 2 known] ... up to MAX_ANCHORS.
+// Known words are shuffled every round so the order can't be memorized.
+function startRun(word) {
+  const st = cur(), S = session;
+  const pool = Object.keys(st.words).filter(k => k !== word && (st.words[k].s === "known" || st.words[k].s === "learning"));
+  if (pool.length < MIN_ANCHORS) return false;
+  const due = shuffle(pool.filter(k => st.words[k].s === "learning" && st.words[k].last !== today()));
+  const rest = shuffle(pool.filter(k => !due.includes(k)));
+  const order = shuffle([...due, ...rest].slice(0, MAX_ANCHORS));
+  S.queue = [];
+  for (let i = 1; i <= order.length; i++) {
+    S.queue.push({ word, role: "target" });
+    shuffle(order.slice(0, i)).forEach(a => S.queue.push({ word: a, role: "anchor" }));
+  }
+  S.run = { word, misses: 0, total: S.queue.length };
+  return true;
+}
+function finishRun() {
+  const S = session, e = cur().words[S.run.word];
+  e.s = "learning"; e.days = 0; e.last = today(); S.learned.push(S.run.word); S.run = null; awardStar(2); save();
+}
+function abortRun() {
+  const S = session, w = S.run.word; S.queue = []; S.run = null; S.skip.push(w); S.aborted.push(w);
+  cur().words[w].s = "pending"; save();
+}
+function nextCard() {
+  const S = session, st = cur();
+  S.modal = null;
+  if (S.queue.length) { S.cur = S.queue.shift(); return renderSession(); }
+  if (S.run) finishRun();
+  if (!S.warmDone) {
+    S.warmDone = true;
+    const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
+    if (w.length) { S.queue = w.map(word => ({ word, role: "review" })); return nextCard(); }
+  }
+  if (S.pendingRuns < PENDING_RUNS_MAX) {
+    const p = Object.keys(st.words).filter(k => st.words[k].s === "pending" && !S.skip.includes(k));
+    if (p.length && startRun(p[0])) {
+      S.pendingRuns++;
+      S.modal = { type: "teach", word: p[0], run: true, title: "Time to learn a missed word" };
+      S.cur = S.queue[0]; return renderSession();
+    }
+  }
+  if (st.nextIdx >= WORDS.length) return endSession();
+  S.cur = { word: WORDS[st.nextIdx], role: "check" };
+  renderSession();
+}
+function creditDay(w) {
+  const e = cur().words[w];
+  if (e && e.s === "learning" && e.last !== today()) {
+    e.days++; e.last = today(); awardStar(1);
+    if (e.days >= DAYS_TO_KNOWN) { e.s = "known"; session.mastered.push(w); awardStar(2); }
+  }
+}
+function answer(yes) {
+  const S = session, st = cur(), c = S.cur;
+  if (!c || S.modal) return;
+  S.undo.push(JSON.stringify({ st, S: Object.assign({}, S, { undo: [] }) })); if (S.undo.length > 40) S.undo.shift();
+  const teach = (extra) => { S.modal = Object.assign({ type: "teach", word: c.word, run: false }, extra); save(); renderSession(); };
+  if (c.role === "check") {
+    S.checked++; st.nextIdx++;
+    if (yes) { st.words[c.word] = { s: "known", days: 0, last: "", first: "yes" }; S.checkedYes++; awardStar(1); }
+    else {
+      st.words[c.word] = { s: "pending", days: 0, last: "", first: "no" }; S.checkedNo++;
+      const ok = startRun(c.word);
+      return teach({ run: ok, title: "Not yet" });
+    }
+  } else if (c.role === "review") {
+    S.reviewed++;
+    if (yes) creditDay(c.word);
+    else { const e = st.words[c.word]; e.s = "pending"; e.days = 0; S.reviewMissed.push(c.word); return teach({ title: "Not yet" }); }
+  } else if (c.role === "target") {
+    if (!yes) {
+      S.run.misses++;
+      if (S.run.misses >= TARGET_MISS_LIMIT) { abortRun(); return teach({ title: "Not yet", note: "This word needs more help. It will come back next time." }); }
+      S.queue.unshift({ word: c.word, role: "target" });
+      return teach({ run: true, again: true, title: "Not yet" });
+    }
+  } else if (c.role === "anchor") {
+    if (yes) creditDay(c.word);
+    else {
+      const e = st.words[c.word]; e.s = "learning"; e.days = 0; e.last = today(); S.anchorMissed.push(c.word);
+      S.queue.splice(Math.min(2, S.queue.length), 0, { word: c.word, role: "anchor" });
+      return teach({ run: true, again: true, title: "Not yet" });
+    }
+  }
+  save(); nextCard();
+}
+$("yesBtn").onclick = () => answer(true);
+$("noBtn").onclick = () => answer(false);
+document.addEventListener("keydown", e => {
+  if (!session || $("session").hidden) return;
+  if (!$("modal").hidden) { if (e.key === "Enter") $("modalBtn").click(); return; }
+  if (e.key === "y" || e.key === "Y") answer(true);
+  if (e.key === "n" || e.key === "N") answer(false);
+});
+$("undoBtn").onclick = () => {
+  const S = session; if (!S.undo.length) return;
+  const snap = JSON.parse(S.undo.pop()), rest = S.undo;
+  state.students = state.students.map(s => s.id === snap.st.id ? snap.st : s);
+  session = Object.assign(snap.S, { undo: rest }); session.modal = null; save(); renderSession();
+};
+function renderSession() {
+  const S = session, st = cur(), c = S.cur;
+  $("cardWord").textContent = c.word;
+  const ph = $("phase"); ph.className = "badge";
+  if (c.role === "check") { ph.textContent = "Checking"; $("cardCount").textContent = `Word ${st.nextIdx + 1} of ${WORDS.length}`; $("barFill").style.width = (st.nextIdx / WORDS.length * 100) + "%"; $("cardHint").textContent = "Can the student read this word?"; }
+  else if (c.role === "review") { ph.textContent = "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = "Words practiced before"; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
+  else { ph.textContent = "Learning a word"; ph.classList.add("learn");
+    const done = Math.max(0, S.run.total - S.queue.length), tot = Math.max(S.run.total, done);
+    $("cardCount").textContent = `Card ${done} of ${tot}`; $("barFill").style.width = Math.min(100, done / tot * 100) + "%";
+    $("cardHint").textContent = c.role === "target" ? "The new word." : "A word the student knows."; }
+  $("undoBtn").disabled = !S.undo.length;
+  $("starLine").textContent = `⭐ ${S.stars} today`;
+  const m = S.modal;
+  $("modal").hidden = !m;
+  if (m) {
+    $("modalTitle").textContent = m.title || "";
+    $("modalWord").textContent = m.word;
+    $("modalText").textContent = m.note ? m.note : m.again ? "Say the word together, then try again." : m.run ? "Say the word together. Then the student will read it with known words." : "Say the word together, then move on.";
+    $("modalBtn").textContent = m.run ? (m.again ? "Keep going" : "Start learning") : "Next";
+  }
+}
+$("modalBtn").onclick = () => { session.modal = null; nextCard(); };
+$("hearBtn").onclick = () => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance($("modalWord").textContent === "I" ? "I" : $("modalWord").textContent.toLowerCase()); u.lang = "en-US"; u.rate = .8; speechSynthesis.speak(u); } catch (e) {} };
+$("endBtn").onclick = endSession;
+
+// ====================================================================
+// SUMMARY
+// ====================================================================
+function endSession() {
+  const S = session, st = cur(); S.modal = null; $("modal").hidden = true; save();
+  $("sumWho").textContent = `${st.name}, ${today()}. Nice hiking!`;
+  const li = (label, arr) => arr.length ? `<li><b>${label}</b> ${arr.map(esc).join(", ")}</li>` : "";
+  $("sumList").innerHTML =
+    `<li><b>⭐ Stars earned today:</b> ${S.stars} (total ${st.stars || 0})</li>` +
+    `<li><b>Words checked:</b> ${S.checked} (${S.checkedYes} read, ${S.checkedNo} missed)</li>` +
+    li("Learned today:", S.learned) + li("Now known (3 days):", S.mastered) +
+    (S.reviewed ? `<li><b>Warm-up words reviewed:</b> ${S.reviewed}</li>` : "") +
+    li("Missed in warm-up, will be relearned:", S.reviewMissed) + li("Known words missed while practicing:", S.anchorMissed) +
+    li("Set aside for next time:", S.aborted) +
+    (st.nextIdx >= WORDS.length ? "<li><b>Every word has been checked.</b></li>" : `<li>Next word to check: #${st.nextIdx + 1}</li>`);
+  show("summary");
+}
+$("sumBack").onclick = () => { renderStudent(); show("student"); };
+$("sumAgain").onclick = startSession;
+
+renderHome(); show("home");
+</script>
+</body>
+</html>

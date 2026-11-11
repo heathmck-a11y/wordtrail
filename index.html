@@ -79,6 +79,8 @@ textarea{width:100%;min-height:110px}
 .mbox{background:#fff;border:4px solid var(--ink);border-radius:24px;padding:24px;max-width:480px;width:100%;text-align:center;box-shadow:0 8px 0 var(--ink)}
 .mbox .word{font-size:clamp(3.4rem,16vw,6rem);margin:8px 0 12px}
 .mbox p{margin:6px 0 16px}
+.mbox .say{display:block;color:var(--soft);font-size:.95rem;margin:4px 0}
+.mbox .script{display:block;font-size:1.25rem;line-height:1.5;margin:4px 0 8px}
 .sumlist{margin:0 0 10px;padding-left:0;list-style:none}
 .sumlist li{margin:6px 0}
 .status{color:var(--soft);font-size:.9rem;margin-top:8px}
@@ -120,7 +122,7 @@ details summary{cursor:pointer;font-weight:700}
     <details>
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
-      <p><b>Learn.</b> When a word is missed, say it together, then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
+      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
@@ -493,7 +495,9 @@ function renderSession() {
   if (m) {
     $("modalTitle").textContent = m.title || "";
     $("modalWord").textContent = m.word;
-    $("modalText").textContent = m.note ? m.note : m.again ? "Say the word together, then try again." : m.run ? "Say the word together. Then the student will read it with known words." : "Say the word together, then move on.";
+    // Correction script the grown-up reads aloud
+    const w = m.word;
+    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. Spell <b>${esc(w)}</b>. What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
     $("modalBtn").textContent = m.run ? (m.again ? "Keep going" : "Start learning") : "Next";
   }
 }

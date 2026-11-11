@@ -122,7 +122,7 @@ details summary{cursor:pointer;font-weight:700}
     <details>
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
-      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
+      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. What are the sounds in [word]? Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
@@ -497,7 +497,7 @@ function renderSession() {
     $("modalWord").textContent = m.word;
     // Correction script the grown-up reads aloud
     const w = m.word;
-    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. Spell <b>${esc(w)}</b>. What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
+    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. What are the sounds in <b>${esc(w)}</b>? Spell <b>${esc(w)}</b>. What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
     $("modalBtn").textContent = m.run ? (m.again ? "Keep going" : "Start learning") : "Next";
   }
 }

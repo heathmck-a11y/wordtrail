@@ -279,9 +279,7 @@ function show(id) { for (const s of ["home", "student", "session", "summary"]) $
 function awardStar(n) {
   const S = session, st = cur(); if (!S || !n) return;
   S.stars += n; st.stars = (st.stars || 0) + n;
-  const el = $("starLine"); el.textContent = `⭐ ${S.stars} today`; el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
-  const f = document.createElement("div"); f.className = "float"; f.textContent = "+" + n + " ⭐";
-  document.body.appendChild(f); f.addEventListener("animationend", () => f.remove());
+  $("starLine").textContent = `⭐ ${S.stars} today`;   // quiet counter, no pop-up animation
 }
 function counts(st) {
   const c = { known: 0, learning: 0, pending: 0 };

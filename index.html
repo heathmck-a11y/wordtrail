@@ -56,9 +56,9 @@ textarea{width:100%;min-height:110px}
 .w.known{background:var(--green);color:#fff}.w.learning{background:var(--amber);color:#2a1a00}.w.pending{background:var(--red);color:#fff}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--soft);margin-bottom:8px}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .badge{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;padding:5px 14px;font-weight:700;font-size:.95rem}
-.badge.learn{background:var(--accent)}.badge.rev{background:#6a4bb0}
+.badge.learn{background:var(--accent)}.badge.rev{background:#6a4bb0}.badge.timer{background:#8a5a00}.badge.timer.up{background:var(--red)}
 .card{background:#fffdf6;border:5px solid var(--wood);border-radius:28px;box-shadow:0 8px 0 #4f3216;min-height:min(46vh,320px);
  display:flex;align-items:center;justify-content:center;margin:12px 0 10px;padding:18px}
 .word{font-size:clamp(4rem,19vw,9rem);line-height:1;text-align:center;word-break:break-word}
@@ -77,15 +77,15 @@ textarea{width:100%;min-height:110px}
 .w .st{font-weight:400;margin-left:3px;font-size:.75rem}
 .hint{text-align:center;color:var(--soft);font-size:.95rem;margin:0 0 12px}
 .modal{position:fixed;inset:0;background:rgba(20,30,50,.6);display:flex;align-items:center;justify-content:center;padding:18px;z-index:20}
-.mbox{background:#fff;border:4px solid var(--ink);border-radius:24px;padding:24px;max-width:480px;width:100%;text-align:center;box-shadow:0 8px 0 var(--ink)}
-.mbox .word{font-size:clamp(3.4rem,16vw,6rem);margin:8px 0 12px}
+.mbox{background:#fff;border:4px solid var(--ink);border-radius:24px;padding:24px;max-width:680px;max-height:96vh;overflow:auto;width:100%;text-align:center;box-shadow:0 8px 0 var(--ink)}
+.mbox .word{font-size:clamp(5rem,24vw,11rem);margin:8px 0 18px}
 .qr{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .qr #qrBox{background:#fff;padding:8px;border:3px solid var(--line);border-radius:12px;line-height:0}
 .qr .url{font-size:.9rem;color:var(--soft);word-break:break-all}
 .mbox p{margin:6px 0 16px}
 .snd{display:inline-block;border-bottom:7px solid var(--accent);margin:0 .03em;padding:0 0 .04em;line-height:1.05}
-.mbox .say{display:block;color:var(--soft);font-size:.95rem;margin:4px 0}
-.mbox .script{display:block;font-size:1.25rem;line-height:1.5;margin:4px 0 8px}
+.mbox .say{display:block;color:var(--soft);font-size:.85rem;margin:4px 0}
+.mbox .script{display:block;font-size:.95rem;line-height:1.4;margin:4px 0 8px}
 .sumlist{margin:0 0 10px;padding-left:0;list-style:none}
 .sumlist li{margin:6px 0}
 .status{color:var(--soft);font-size:.9rem;margin-top:8px}
@@ -130,6 +130,7 @@ details summary{cursor:pointer;font-weight:700}
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. What are the sounds in [word]? Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
+      <p><b>Time limit.</b> Each session has a timer (choose 2, 3 or 4 minutes on the student page). When time is up, the student finishes the word they are on and the session ends with a summary. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
     </details>
   </div>
@@ -172,6 +173,12 @@ details summary{cursor:pointer;font-weight:700}
       <input type="number" id="startAt" min="1" max="300" style="width:90px">
       <button class="btn small" id="startAtBtn">Set</button>
     </div>
+    <div class="row" style="margin-top:12px">
+      <label for="sessMin">Session length</label>
+      <select id="sessMin" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff">
+        <option value="2">2 minutes</option><option value="3">3 minutes</option><option value="4">4 minutes</option>
+      </select>
+    </div>
     <p class="status" id="stuMsg"></p>
   </div>
   <div class="panel" id="reportPanel" hidden>
@@ -196,6 +203,7 @@ details summary{cursor:pointer;font-weight:700}
   <div class="top">
     <button class="btn small" id="endBtn">End session</button>
     <span class="badge" id="phase"></span>
+    <span class="badge timer" id="timer"></span>
     <button class="btn small" id="undoBtn">Undo</button>
   </div>
   <div class="card"><div class="word" id="cardWord"></div></div>
@@ -243,6 +251,7 @@ const DAYS_TO_KNOWN    = 3;  // different days a learned word must be read right
 const WARMUP_MAX       = 5;  // yellow words reviewed at the start of a session
 const PENDING_RUNS_MAX = 3;  // earlier-missed words relearned at the start of a session
 const TARGET_MISS_LIMIT= 3;  // misses on the new word before it is set aside for next time
+const DEFAULT_MINUTES  = 3;  // session length until the teacher picks another
 
 // Kearns high-frequency word list, words 1-300 (Texas Education Agency, 2021), same as High-Frequency Word Check
 const WORDS = "the to and of a in is I you it for that on was with are this be not as at he have from or they all but by your one can we his if will what about my do there an up had out when so no would more she were her like me some their other time has get them then people how see who just new into now been which only could know any these over than back him first very us go our good may make here two many also way did where use down home well after day think help find most work its made too little want right because much even each should through before long take look must off am around why come old last still need same man such got big next something another name water say world never great again those place read put school house part under while found own every away small year tell life three best really set high might went both thought came without few better always let book give end between left show thing sure top hard keep money free once white live room information yes page since group please number city men children head black until night large call play enough run today ever line food hand open try air family car real side far against lot course person took change anything light state saw red told feel however important system someone mother during full along game job together nothing seen list kind body care though special box order soon word buy sun done second yet country often start young story oh business above heard able almost land sound face four front point mean ask else stop learn street ago write problem bad everything maybe".split(" ");
@@ -346,6 +355,7 @@ function renderStudent() {
   const pct = Math.min(100, st.nextIdx / WORDS.length * 100);
   $("trailFill").style.width = pct + "%"; $("trailBoot").style.left = pct + "%";
   $("startAt").value = st.nextIdx + 1;
+  $("sessMin").value = String(state.minutes || DEFAULT_MINUTES);
   $("reportPanel").hidden = true; $("stuMsg").textContent = "";
   $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
 }
@@ -380,12 +390,29 @@ $("reportCopy").onclick = async () => {
 // ====================================================================
 // SESSION: check new words, learn missed words with incremental rehearsal
 // ====================================================================
+$("sessMin").onchange = () => { state.minutes = parseInt($("sessMin").value, 10) || DEFAULT_MINUTES; save(); };
+
+// Session timer. When time runs out the current word is finished, then the session ends.
+let timerId = null;
+function fmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function tick() {
+  const S = session; if (!S) { stopTimer(); return; }
+  const left = S.endAt - Date.now(), t = $("timer");
+  if (left <= 0) {
+    t.textContent = "Time's up"; t.classList.add("up");
+    if (!S.timeUp) { S.timeUp = true; if (S.cur) renderSession(); }
+  } else { t.textContent = "⏱ " + fmt(left); t.classList.remove("up"); }
+}
+function startTimer() { stopTimer(); tick(); timerId = setInterval(tick, 1000); }
+
 $("startBtn").onclick = startSession;
 function startSession() {
   const st = cur(); if (!st) return;
   session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
+    endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false,
     stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
-  show("session"); nextCard();
+  show("session"); startTimer(); nextCard();
 }
 // Rehearsal for one word: rounds of  [new word + 1 known], [new word + 2 known] ... up to MAX_ANCHORS.
 // Known words are shuffled every round so the order can't be memorized.
@@ -415,8 +442,9 @@ function abortRun() {
 function nextCard() {
   const S = session, st = cur();
   S.modal = null;
-  if (S.queue.length) { S.cur = S.queue.shift(); return renderSession(); }
+  if (S.queue.length && (S.run || !S.timeUp)) { S.cur = S.queue.shift(); return renderSession(); }
   if (S.run) finishRun();
+  if (S.timeUp) return endSession();
   if (!S.warmDone) {
     S.warmDone = true;
     const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
@@ -499,6 +527,7 @@ function renderSession() {
     const done = Math.max(0, S.run.total - S.queue.length), tot = Math.max(S.run.total, done);
     $("cardCount").textContent = `Card ${done} of ${tot}`; $("barFill").style.width = Math.min(100, done / tot * 100) + "%";
     $("cardHint").textContent = c.role === "target" ? "The new word." : "A word the student knows."; }
+  if (S.timeUp) $("cardHint").textContent = "Time is up. After this word, you are done.";
   $("undoBtn").disabled = !S.undo.length;
   $("starLine").textContent = `⭐ ${S.stars} today`;
   const m = S.modal;
@@ -506,6 +535,8 @@ function renderSession() {
   if (m) {
     $("modalTitle").textContent = m.title || "";
     $("modalWord").innerHTML = sounds(m.word).map(g => `<span class="snd">${esc(g)}</span>`).join("");
+    { const n = m.word.length, rem = n <= 3 ? 11 : n <= 5 ? 9 : n <= 7 ? 7 : n <= 9 ? 5.5 : 4.2;
+      $("modalWord").style.fontSize = `min(${rem}rem, ${Math.max(10, Math.floor(80 / (n * 0.6)))}vw)`; }
     // Correction script the grown-up reads aloud
     const w = m.word;
     $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. What are the sounds in <b>${esc(w)}</b>? Spell <b>${esc(w)}</b>. What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
@@ -520,12 +551,14 @@ $("endBtn").onclick = endSession;
 // SUMMARY
 // ====================================================================
 function endSession() {
+  stopTimer();
   const S = session, st = cur(); S.modal = null; $("modal").hidden = true; save();
   $("sumWho").textContent = `${st.name}, ${today()}. Nice hiking!`;
   const li = (label, arr) => arr.length ? `<li><b>${label}</b> ${arr.map(esc).join(", ")}</li>` : "";
   $("sumList").innerHTML =
     `<li><b>⭐ Stars earned today:</b> ${S.stars} (total ${st.stars || 0})</li>` +
     `<li><b>Words checked:</b> ${S.checked} (${S.checkedYes} read, ${S.checkedNo} missed)</li>` +
+    (S.timeUp ? "<li><b>Time limit reached.</b></li>" : "") +
     li("Learned today:", S.learned) + li("Now known (3 days):", S.mastered) +
     (S.reviewed ? `<li><b>Warm-up words reviewed:</b> ${S.reviewed}</li>` : "") +
     li("Missed in warm-up, will be relearned:", S.reviewMissed) + li("Known words missed while practicing:", S.anchorMissed) +

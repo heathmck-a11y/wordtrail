@@ -90,6 +90,16 @@ textarea{width:100%;min-height:110px}
 .sumlist li{margin:6px 0}
 .status{color:var(--soft);font-size:.9rem;margin-top:8px}
 details summary{cursor:pointer;font-weight:700}
+
+.lenbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0 12px}
+.lenbtn{min-width:104px;padding:16px 18px;font-size:1.5rem}
+#pauseOv,#lenModal{z-index:40}
+.ctxout{background:#fff;border:3px solid var(--line);border-radius:18px;padding:18px 22px;font-size:clamp(1.5rem,5vw,2.2rem);line-height:1.5;margin:10px 0}
+.ctxout p{margin:0 0 .45em}
+.ctxout.hl .lw{color:#17653a;font-weight:700}
+.ctxtitle{font-weight:800;font-size:1rem!important;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+.ctxmode[aria-pressed="true"]{background:var(--accent);color:#fff}
+@media print{.noprint{display:none!important}body{background:#fff!important}.wrap{padding:0}.ctxout{border:0;font-size:22pt;padding:0}.ctxout .lw{color:inherit!important;font-weight:inherit!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -130,7 +140,7 @@ details summary{cursor:pointer;font-weight:700}
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. What are the sounds in [word]? Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
-      <p><b>Time limit.</b> Each session has a timer (choose 2, 3 or 4 minutes on the student page). When time is up, the student finishes the word they are on and the session ends with a summary. The next session picks up where this one left off.</p>
+      <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the student finishes the word they are on and the session ends with a summary. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
     </details>
   </div>
@@ -169,15 +179,12 @@ details summary{cursor:pointer;font-weight:700}
       <button class="btn" id="reportBtn">Progress report</button>
     </div>
     <div class="row" style="margin-top:12px">
+      <button class="btn" id="ctxBtn">Practice learned words in context</button>
+    </div>
+    <div class="row" style="margin-top:12px">
       <label for="startAt">Check from word #</label>
       <input type="number" id="startAt" min="1" max="300" style="width:90px">
       <button class="btn small" id="startAtBtn">Set</button>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <label for="sessMin">Session length</label>
-      <select id="sessMin" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff">
-        <option value="2">2 minutes</option><option value="3">3 minutes</option><option value="4">4 minutes</option>
-      </select>
     </div>
     <p class="status" id="stuMsg"></p>
   </div>
@@ -204,6 +211,7 @@ details summary{cursor:pointer;font-weight:700}
     <button class="btn small" id="endBtn">End session</button>
     <span class="badge" id="phase"></span>
     <span class="badge timer" id="timer"></span>
+    <button class="btn small" id="pauseBtn">⏸ Pause</button>
     <button class="btn small" id="undoBtn">Undo</button>
   </div>
   <div class="card"><div class="word" id="cardWord"></div></div>
@@ -230,6 +238,45 @@ details summary{cursor:pointer;font-weight:700}
 
 </div>
 
+<!-- IN CONTEXT -->
+<section id="context" hidden>
+<div class="wrap" style="padding-top:0">
+  <div class="top noprint"><button class="btn small" id="ctxBack">Back to student</button></div>
+  <h1 id="ctxName"></h1>
+  <p class="sub noprint">Sentences and short stories built from the words this student has learned, plus simple sound-it-out words. Words still being practiced come first.</p>
+  <div class="row noprint" style="margin-bottom:8px">
+    <button class="btn small ctxmode" id="ctxSent" aria-pressed="true">Sentences</button>
+    <button class="btn small ctxmode" id="ctxStory" aria-pressed="false">Short story</button>
+  </div>
+  <div class="ctxout" id="ctxOut"></div>
+  <p class="status noprint" id="ctxInfo"></p>
+  <div class="row noprint"><button class="btn go" id="ctxMore">New sentences</button><button class="btn" id="ctxCopy">Copy</button><button class="btn" id="ctxPrint">Print</button></div>
+</div>
+</section>
+<div class="modal" id="lenModal" hidden>
+  <div class="mbox">
+    <div style="font-weight:800;font-size:1.2rem;margin-bottom:6px">Note for the grown-up</div>
+    <p style="text-align:left;margin:0 0 14px">Tap <b>Yes</b> only if the student read the word <b>right away, without sounding it out first</b>. That is the goal: automatic word reading. If they had to sound it out, tap <b>No</b> so the word gets more practice.</p>
+    <div style="font-weight:800;font-size:1.4rem">How long today?</div>
+    <div class="lenbtns">
+      <button class="btn go lenbtn" data-min="2">2 min</button>
+      <button class="btn go lenbtn" data-min="3">3 min</button>
+      <button class="btn go lenbtn" data-min="4">4 min</button>
+    </div>
+    <button class="btn small" id="lenCancel">Cancel</button>
+  </div>
+</div>
+<div class="modal" id="pauseOv" hidden>
+  <div class="mbox">
+    <div style="font-size:3rem;line-height:1">⏸</div>
+    <h2 style="margin:6px 0">Paused</h2>
+    <p>The timer is stopped. Tap Resume when you are ready.</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn go" id="resumeBtn">Resume</button>
+      <button class="btn small warn" id="pauseEnd">End session</button>
+    </div>
+  </div>
+</div>
 <div class="modal" id="modal" hidden>
   <div class="mbox">
     <div id="modalTitle" style="font-weight:700"></div>
@@ -279,7 +326,7 @@ function esc(t) { const d = document.createElement("div"); d.textContent = t; re
 
 let curId = null, session = null;
 const cur = () => state.students.find(s => s.id === curId);
-function show(id) { for (const s of ["home", "student", "session", "summary"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+function show(id) { for (const s of ["home", "student", "session", "summary", "context"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
 
 // Word entries: st.words[word] = { s: 'known'|'learning'|'pending', days, last, first }
 //   known    = read at the check, or learned and then read right on 3 days (green)
@@ -355,7 +402,6 @@ function renderStudent() {
   const pct = Math.min(100, st.nextIdx / WORDS.length * 100);
   $("trailFill").style.width = pct + "%"; $("trailBoot").style.left = pct + "%";
   $("startAt").value = st.nextIdx + 1;
-  $("sessMin").value = String(state.minutes || DEFAULT_MINUTES);
   $("reportPanel").hidden = true; $("stuMsg").textContent = "";
   $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
 }
@@ -390,7 +436,6 @@ $("reportCopy").onclick = async () => {
 // ====================================================================
 // SESSION: check new words, learn missed words with incremental rehearsal
 // ====================================================================
-$("sessMin").onchange = () => { state.minutes = parseInt($("sessMin").value, 10) || DEFAULT_MINUTES; save(); };
 
 // Session timer. When time runs out the current word is finished, then the session ends.
 let timerId = null;
@@ -406,13 +451,30 @@ function tick() {
 }
 function startTimer() { stopTimer(); tick(); timerId = setInterval(tick, 1000); }
 
-$("startBtn").onclick = startSession;
+// Hit the trail: first choose how long, then start.
+$("startBtn").onclick = () => { $("lenModal").hidden = false; };
+$("lenCancel").onclick = () => { $("lenModal").hidden = true; };
+document.querySelectorAll(".lenbtn").forEach(b => b.onclick = () => {
+  state.minutes = parseInt(b.dataset.min, 10) || DEFAULT_MINUTES; save(); $("lenModal").hidden = true; startSession();
+});
+// Pause: stops the timer and covers the card. Resume adds the paused time back so no practice time is lost.
+function pauseSession() {
+  const S = session; if (!S || S.paused) return;
+  S.paused = true; S.pausedAt = Date.now(); stopTimer(); $("timer").textContent = "⏸ Paused"; $("pauseOv").hidden = false; $("resumeBtn").focus();
+}
+function resumeSession() {
+  const S = session; if (!S || !S.paused) return;
+  S.endAt += Date.now() - S.pausedAt; S.paused = false; S.pausedAt = 0; $("pauseOv").hidden = true; startTimer();
+}
+$("pauseBtn").onclick = pauseSession; $("resumeBtn").onclick = resumeSession;
+$("pauseEnd").onclick = () => { $("pauseOv").hidden = true; if (session) session.paused = false; endSession(); };
+$("startBtn").dataset.ready = 1;
 function startSession() {
   const st = cur(); if (!st) return;
   session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
-    endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false,
+    endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false, paused: false, pausedAt: 0,
     stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
-  show("session"); startTimer(); nextCard();
+  $("pauseOv").hidden = true; show("session"); startTimer(); nextCard();
 }
 // Rehearsal for one word: rounds of  [new word + 1 known], [new word + 2 known] ... up to MAX_ANCHORS.
 // Known words are shuffled every round so the order can't be memorized.
@@ -506,7 +568,7 @@ function answer(yes) {
 $("yesBtn").onclick = () => answer(true);
 $("noBtn").onclick = () => answer(false);
 document.addEventListener("keydown", e => {
-  if (!session || $("session").hidden) return;
+  if (!session || $("session").hidden || session.paused) return;
   if (!$("modal").hidden) { if (e.key === "Enter") $("modalBtn").click(); return; }
   if (e.key === "y" || e.key === "Y") answer(true);
   if (e.key === "n" || e.key === "N") answer(false);
@@ -551,7 +613,7 @@ $("endBtn").onclick = endSession;
 // SUMMARY
 // ====================================================================
 function endSession() {
-  stopTimer();
+  stopTimer(); $("pauseOv").hidden = true;
   const S = session, st = cur(); S.modal = null; $("modal").hidden = true; save();
   $("sumWho").textContent = `${st.name}, ${today()}. Nice hiking!`;
   const li = (label, arr) => arr.length ? `<li><b>${label}</b> ${arr.map(esc).join(", ")}</li>` : "";
@@ -568,6 +630,582 @@ function endSession() {
 }
 $("sumBack").onclick = () => { renderStudent(); show("student"); };
 $("sumAgain").onclick = startSession;
+
+
+// ====================================================================
+// PRACTICE LEARNED WORDS IN CONTEXT
+// Sentences and short stories are written ahead of time. A sentence is offered only when every
+// high-frequency word in it is a word this student has learned (known or still practicing).
+// The other words are simple sound-it-out words (BASE below). Edit BASE or the lists to suit your phonics scope.
+// ====================================================================
+const BASE = new Set("ant bag bang bat batch bath bed beg bell bent bib big bin bit bob brush bud bug bun bunk bus but camp can cap cat catch chat chin chip chop clamp clap clip cob cod cop cot crab cub cup cut dad damp deck den desk dig ding dip dish ditch dog doll dot drink drip drum dub duck dug dunk egg eggs fan fast fed fell fill fin fish fit flag flat flip fox frog fun gap gift glad gong got grab grin grip gum gun gut ham hang hat hatch hen hid hill hit hop hot hug hum hut jam jet job jog jot jug jump junk jut ken kick king kit lamp lap latch led leg link lip lit log long lot lug mad map mat match math men milk mink mob mom mop much mud mug nap neck nest net nod not nun nut pal pan pat patch path peg pen pet pick pig pin ping pink pit plan plus pod pond pop pot pull pun pup rag ramp ran rang rat red rich ring rip rob rock rod rot rub rug run rut sad sang sat shed ship shop sick sing sink sip sit six skin skip skunk slam slim slip snap sob sock song spin spot stamp step sub such sum sun sunk swam swim tag tap ten tent thank thick thin think tin tip tramp trip trunk tub tug van vet wag wed wet whip win wing wink wish wit yap yen yes zing zip zoo".split(" "));
+const SENTENCES = [
+"The cat sat.",
+"The dog is in the mud.",
+"The pig is in the mud.",
+"The pig is not sad.",
+"Sam and Dan hop and skip.",
+"A hen sits in a nest.",
+"A bag of nuts is on the mat.",
+"A bug is on a mat.",
+"I sit in a van.",
+"It is a bug.",
+"You can hop.",
+"Can you see the bug?",
+"This is a hat.",
+"The pup was wet.",
+"It was hot.",
+"I play with a pup.",
+"The pig is with the hen.",
+"The ducks are wet.",
+"You are in the van.",
+"I will be a cat.",
+"Can you be good?",
+"The pup is not wet.",
+"Look at the bug.",
+"I sit at a desk.",
+"He had a pet pig.",
+"He can hop.",
+"You have a cap.",
+"A hen ran from the fox.",
+"A gift from Dad.",
+"Is it a cat or a dog?",
+"Do you want milk or jam?",
+"They hop in the mud.",
+"They can sit on the log.",
+"All the pigs are in the mud.",
+"The pup is wet, but it is glad.",
+"The cat sat by my cup.",
+"Is this your hat?",
+"Pat your pet.",
+"I see one bug.",
+"Put one nut in the cup.",
+"A pig can hop.",
+"I can zip it.",
+"We can hop.",
+"We sit on a log.",
+"He has his hat.",
+"The dog dug in his bed.",
+"If it is hot, we nap.",
+"I will hop.",
+"What is in the box?",
+"What is that?",
+"A story about a pig.",
+"My pet is a cat.",
+"My dad has a van.",
+"I do not have a pen.",
+"Do you like jam?",
+"What do you see?",
+"There is a bug on the mat.",
+"Is there a cat in the van?",
+"An ant is on a log.",
+"I have an egg.",
+"The pup can jump up.",
+"Pam had ten pens.",
+"The cat ran out.",
+"Get the pup out of the mud.",
+"When it is hot, we swim.",
+"I am so glad.",
+"No, I do not.",
+"There is no jam.",
+"I would like a nap.",
+"I want more jam.",
+"She can hop.",
+"She has a red hen.",
+"The pigs were in the mud.",
+"Her hat is on the bed.",
+"Pam hugs her pet pig.",
+"I like to swim.",
+"Hug me!",
+"Can you help me?",
+"I have some nuts.",
+"Get some milk.",
+"Their pup is in the mud.",
+"They hug their dad.",
+"The other cat is wet.",
+"It is time for bed.",
+"The hen has ten eggs.",
+"Get the mop.",
+"I see them.",
+"Sam got up, then he ran.",
+"The people sit in the sun.",
+"How can I help?",
+"I see a fox.",
+"Who is in the tent?",
+"It is just a bug.",
+"I have a new hat.",
+"Put the nuts into a bag.",
+"The frog hops into the pond.",
+"Now it is time to nap.",
+"I have been in bed.",
+"Which pen is red?",
+"I have only one pen.",
+"I could not hop.",
+"Do you know Sam?",
+"Do you have any jam?",
+"I like these nuts.",
+"The cat jumps over the log.",
+"I like jam more than ham.",
+"Come back!",
+"The pup ran back.",
+"I hug him.",
+"First, sit. Then nap.",
+"It is very hot.",
+"Come with us.",
+"Go to bed.",
+"Our cat is in the tub.",
+"You did a good job.",
+"May I sit?",
+"I can make jam.",
+"Sit here.",
+"Two pigs are in the mud.",
+"I see many bugs.",
+"I also have a pen.",
+"Which way?",
+"Did you see it?",
+"Where is the cat?",
+"I use a mop.",
+"Sit down.",
+"The pup ran down the hill.",
+"I go home.",
+"I can swim well.",
+"After a nap, I get up.",
+"It is a hot day.",
+"I think it is a cat.",
+"I help Dad.",
+"I can find a bug.",
+"Most pups like mud.",
+"The hen sits on its nest.",
+"Dad made jam.",
+"I am sad too.",
+"A little pup.",
+"The little pig is wet.",
+"I want jam.",
+"You are right!",
+"I sit because I am sad.",
+"I like it so much.",
+"Each pig is in the mud.",
+"I should go to bed.",
+"The pup ran through the mud.",
+"Get a cap before you go.",
+"The log is long.",
+"Take a nap.",
+"Look in the box.",
+"You must sit.",
+"The cap fell off.",
+"I am glad.",
+"The pup ran around the log.",
+"Why is the pup wet?",
+"Come in.",
+"The old dog naps.",
+"The last nut is in the cup.",
+"Sit still.",
+"We need ten cups.",
+"We have the same hat.",
+"The man has a van.",
+"I got a pet.",
+"The big dog is in the mud.",
+"Sit next to me.",
+"I see something.",
+"Get another cup.",
+"My name is Sam.",
+"Get some water.",
+"Say it.",
+"The world is big.",
+"The pup never sits still.",
+"A great day!",
+"Do it again.",
+"I like those hats.",
+"Put it in its place.",
+"I can read.",
+"Put the cap on.",
+"I go to school.",
+"The cat is in the house.",
+"The cat is under the bed.",
+"Sit still while I zip it.",
+"I found a pen.",
+"I have my own bed.",
+"Every pup is wet.",
+"The pup ran away.",
+"The small cat is on the mat.",
+"It is a new year.",
+"Tell me.",
+"I have three pens.",
+"You are the best.",
+"I really like jam.",
+"It might be wet.",
+"We went to the shop.",
+"Both pups are wet.",
+"I thought it was a cat.",
+"A few nuts.",
+"I always sit here.",
+"Let me in.",
+"I read a book.",
+"Give me a hug.",
+"The end.",
+"Sit between us.",
+"Show me.",
+"What is that thing?",
+"Are you sure?",
+"Sit on top.",
+"A rock is hard.",
+"Keep it in the box.",
+"I have money.",
+"A white hen.",
+"I live in a house.",
+"My room is big.",
+"Yes, I can.",
+"We sit in a group.",
+"Please sit.",
+"My number is six.",
+"The men are in the van.",
+"The children hop.",
+"Pat my head.",
+"A black cat.",
+"Sit until ten.",
+"It is night.",
+"I will call Dad.",
+"Let us play.",
+"That is enough.",
+"I can run fast.",
+"Today is fun.",
+"Best day ever!",
+"Sit in line.",
+"The pup has food.",
+"Open the box.",
+"Try it.",
+"The air is hot.",
+"We are a family.",
+"Dad has a car.",
+"It is a real bug.",
+"The shop is far from here.",
+"I have a lot of nuts.",
+"Of course I can.",
+"Dad took the van.",
+"I will change it.",
+"I saw a fox.",
+"Dad told me.",
+"I feel well.",
+"Someone is in the tent.",
+"My mother is in the house.",
+"The cup is full.",
+"Come along.",
+"I like this game.",
+"Dad has a job.",
+"We hop together.",
+"There is nothing in the box.",
+"I have not seen it.",
+"Make a list.",
+"Be kind.",
+"I will be home soon.",
+"Read this word.",
+"I will buy a hat.",
+"The sun is hot.",
+"I am done.",
+"Not yet.",
+"I often nap.",
+"A young pup.",
+"Read a story.",
+"Oh no!",
+"Dad has a business.",
+"A bug is above the bed.",
+"I heard a bug.",
+"I am able to hop.",
+"I am almost done.",
+"The pup is on land.",
+"What is that sound?",
+"A wet face.",
+"I have four pens.",
+"Sit in front.",
+"What do you mean?",
+"Ask Dad.",
+"What else?",
+"Stop, pup!",
+"Let us learn.",
+"The van is on the street.",
+"Ten days ago.",
+"I can write.",
+"I have a problem.",
+"The mud is bad.",
+"Everything is wet.",
+"Maybe I can.",
+"{N} can hop.",
+"{N} has a pet pig.",
+"{N} sat on a log.",
+"{N} and Dad go to the shop.",
+"Can {N} see the bug?",
+"{N} is a good pal.",
+"It is time for {N} to nap.",
+"{N} has a red cap.",
+"Mom and {N} sit in the sun.",
+"{N} will help Dad.",
+"He is as fast as a jet.",
+"I work with Dad.",
+"Dad has work.",
+"Even the pup is wet.",
+"Such a big pig!",
+"This is the best part.",
+"Life is fun.",
+"Set it on the desk.",
+"Jump high.",
+"The dog came back.",
+"I can not nap without my pet.",
+"A bed is better than a rock.",
+"My left leg is wet.",
+"It is free.",
+"Once I had a pig.",
+"This book has information.",
+"Read the page.",
+"I have been here since ten.",
+"Dad is in the city.",
+"A large pig.",
+"Pat the pup with one hand.",
+"Sit by my side.",
+"Sit against the log.",
+"One person sat in the van.",
+"Do you want anything?",
+"A light bag.",
+"I live in this state.",
+"I am sad. However, I will try.",
+"It is important to nap.",
+"I have a system.",
+"I nap during the day.",
+"My body is wet.",
+"I care for my pet.",
+"It is hot, though.",
+"This is a special day.",
+"Put them in order.",
+"I am second in line.",
+"A big country.",
+"Let us start.",
+"Point at the pup.",
+"Dan will go to the shop.",
+"The pig and the hen sit in the sun.",
+"We can sit on the rug and read.",
+"I see a pig, a hen, and a dog.",
+"Pam can run to the van.",
+"My pup can sit and hop.",
+"The man and the dog sat in the van.",
+"Tim will help his mom.",
+"The big dog is not sad.",
+"We had fun at the pond.",
+"She will get a nut for the pup.",
+"Can you get it for me?",
+"Look at all the bugs on the log.",
+"He went home with his dad.",
+"I have a lot of fun with my pal.",
+"We will go back to the shop."
+];
+const STORIES = [
+{
+"t": "The Pig",
+"l": [
+"The pig is in the mud.",
+"The mud is hot.",
+"The pig is not sad.",
+"The pig is glad."
+]
+},
+{
+"t": "Pam and Dan",
+"l": [
+"Pam and Dan sit on a log.",
+"Pam has a bun.",
+"Dan has jam.",
+"They sit in the sun."
+]
+},
+{
+"t": "The Hen",
+"l": [
+"A hen sat on a nest.",
+"The hen had ten eggs.",
+"The eggs were not big.",
+"The hen was so glad."
+]
+},
+{
+"t": "My Pet",
+"l": [
+"I have a pet.",
+"My pet is a cat.",
+"It likes to nap.",
+"I like my cat.",
+"We are pals."
+]
+},
+{
+"t": "The Lost Cap",
+"l": [
+"Tim had a red cap.",
+"He went to the shop.",
+"He did not have it.",
+"Tim ran back to the van.",
+"The cap was in the van!"
+]
+},
+{
+"t": "A Big Box",
+"l": [
+"Dad has a big box.",
+"What is in it?",
+"I think it is a pup!",
+"Yes, it is a pup.",
+"The pup is very small.",
+"I hug the pup."
+]
+},
+{
+"t": "The Dog and the Bug",
+"l": [
+"A dog sat in the sun.",
+"A bug sat on his leg.",
+"The dog did not like it.",
+"The dog ran and the bug hid."
+]
+},
+{
+"t": "The Fox and the Hen",
+"l": [
+"A fox ran to the hen house.",
+"The hen saw the fox.",
+"The hen did not let him in.",
+"The fox went away."
+]
+},
+{
+"t": "At School",
+"l": [
+"I go to school.",
+"I read a book.",
+"I write my name.",
+"I have a good day."
+]
+},
+{
+"t": "Night",
+"l": [
+"It is night.",
+"The sun is down.",
+"I get in bed.",
+"I nap.",
+"Then it is day."
+]
+},
+{
+"t": "A Hot Day",
+"l": [
+"It was a hot day.",
+"We went to the pond.",
+"We hop in the pond.",
+"The pond was wet and fun.",
+"Then we went home."
+]
+},
+{
+"t": "Sam and Meg",
+"l": [
+"Sam has a van.",
+"Meg has a bag.",
+"They go to the shop.",
+"Meg got a hat for Sam.",
+"Sam got jam for Meg.",
+"They were glad."
+]
+}
+];
+const NAMES_OK = new Set(["sam","dan","pam","tim","meg","ben","max"]);
+const WSET = new Set(WORDS.map(w => w.toLowerCase()));
+function analyze(line) {
+  const req = new Set(); let ok = true;
+  for (const raw of line.match(/[A-Za-z{}]+/g) || []) {
+    const t = raw.toLowerCase();
+    if (t === "{n}" || NAMES_OK.has(t)) continue;
+    if (WSET.has(t)) { req.add(t); continue; }
+    if (BASE.has(t)) continue;
+    if (t.endsWith("s") && WSET.has(t.slice(0, -1))) { req.add(t.slice(0, -1)); continue; }
+    if (t.endsWith("s") && BASE.has(t.slice(0, -1))) continue;
+    if (t.endsWith("es") && BASE.has(t.slice(0, -2))) continue;
+    ok = false;
+  }
+  return { line, req: [...req], ok };
+}
+const SENT = SENTENCES.map(analyze).filter(x => x.ok);
+const STORY = STORIES.map(s => { const a = s.l.map(analyze); return { t: s.t, l: s.l, ok: a.every(x => x.ok), req: [...new Set(a.flatMap(x => x.req))] }; }).filter(s => s.ok);
+let ctx = { mode: "sent", covered: new Set(), shown: new Set(), shownStories: new Set(), lines: [], title: "" };
+function learnedMap(st) {
+  const L = {};
+  for (const k in st.words) if (st.words[k].s === "known" || st.words[k].s === "learning") L[k.toLowerCase()] = st.words[k].s;
+  return L;
+}
+function pickSentences(L, n) {
+  const pool = SENT.filter(x => x.req.every(w => L[w]));
+  const coverable = new Set(pool.flatMap(x => x.req));
+  if ([...coverable].every(w => ctx.covered.has(w))) ctx.covered.clear();   // everything used once: start a new round
+  const out = [], used = new Set();
+  while (out.length < n) {
+    let best = null, bs = -1e9;
+    for (const x of pool) {
+      if (used.has(x.line)) continue;
+      let sc = Math.random() * 0.9;
+      for (const w of x.req) if (!ctx.covered.has(w)) sc += L[w] === "learning" ? 3 : 1;
+      if (ctx.shown.has(x.line)) sc -= 5;
+      if (sc > bs) { bs = sc; best = x; }
+    }
+    if (!best) break;
+    out.push(best); used.add(best.line); best.req.forEach(w => ctx.covered.add(w));
+  }
+  out.forEach(x => ctx.shown.add(x.line));
+  return { out, poolSize: pool.length };
+}
+function renderLine(line, L, name) {
+  return line.split(/(\{N\}|[A-Za-z]+)/).map(p => {
+    if (p === "{N}") return esc(name);
+    if (/^[A-Za-z]+$/.test(p)) {
+      const t = p.toLowerCase(); const k = WSET.has(t) ? t : (t.endsWith("s") && WSET.has(t.slice(0, -1))) ? t.slice(0, -1) : null;
+      return p;
+    }
+    return esc(p);
+  }).join("");
+}
+function makeContext(fresh) {
+  const st = cur(); if (!st) return;
+  const L = learnedMap(st), total = Object.keys(L).length;
+  if (fresh) { ctx.covered = new Set(); ctx.shown = new Set(); ctx.shownStories = new Set(); }
+  let lines = [], title = "", note = "";
+  if (ctx.mode === "story") {
+    const ok = STORY.filter(s => s.req.every(w => L[w]));
+    if (ok.length) {
+      let fresh2 = ok.filter(s => !ctx.shownStories.has(s.t));
+      if (!fresh2.length) { ctx.shownStories.clear(); fresh2 = ok; }
+      const s = fresh2[Math.floor(Math.random() * fresh2.length)]; ctx.shownStories.add(s.t);
+      lines = s.l; title = s.t;
+    } else note = "No short story fits this student's words yet, so here are sentences instead. ";
+  }
+  let used = new Set();
+  if (!lines.length) {
+    const r = pickSentences(L, 8); lines = r.out.map(x => x.line);
+    if (!r.poolSize) { note += "Not enough learned words yet to build sentences. Check or learn a few more words on the trail first."; }
+  }
+  lines.forEach(l => analyze(l).req.forEach(w => used.add(w)));
+  ctx.lines = lines.map(l => l.replace(/\{N\}/g, st.name)); ctx.title = title;
+  $("ctxOut").innerHTML = (title ? `<p class="ctxtitle">${esc(title)}</p>` : "") + lines.map(l => `<p>${renderLine(l, L, st.name)}</p>`).join("");
+  const missing = Object.keys(L).filter(w => !used.has(w)).sort((a, b) => WSET.has(a) && WORDS.findIndex(x => x.toLowerCase() === a) - WORDS.findIndex(x => x.toLowerCase() === b));
+  $("ctxInfo").textContent = note + (lines.length ? `These lines use ${used.size} of ${total} learned words.` + (missing.length ? ` Not in these lines: ${missing.slice(0, 14).join(", ")}${missing.length > 14 ? ", and more" : ""}. Tap "${ctx.mode === "story" ? "New story" : "New sentences"}" for others.` : " Every learned word is in here.") : "");
+  $("ctxMore").textContent = ctx.mode === "story" && title ? "New story" : "New sentences";
+  $("ctxSent").setAttribute("aria-pressed", ctx.mode === "sent"); $("ctxStory").setAttribute("aria-pressed", ctx.mode === "story");
+}
+$("ctxBtn").onclick = () => { const st = cur(); if (!st) return; $("ctxName").textContent = st.name; ctx.mode = "sent"; show("context"); makeContext(true); };
+$("ctxBack").onclick = () => { renderStudent(); show("student"); };
+$("ctxSent").onclick = () => { ctx.mode = "sent"; makeContext(false); };
+$("ctxStory").onclick = () => { ctx.mode = "story"; makeContext(false); };
+$("ctxMore").onclick = () => makeContext(false);
+$("ctxCopy").onclick = async () => {
+  const txt = (ctx.title ? ctx.title + "\n\n" : "") + ctx.lines.join("\n");
+  try { await navigator.clipboard.writeText(txt); $("ctxCopy").textContent = "Copied"; } catch (e) { $("ctxCopy").textContent = "Copy didn't work"; }
+  setTimeout(() => $("ctxCopy").textContent = "Copy", 1600);
+};
+$("ctxPrint").onclick = () => { try { window.print(); } catch (e) { $("ctxInfo").textContent = "Printing isn't available here. Use Copy and paste it into a document."; } };
 
 // The QR code image in the page is fixed to this address. If the app moves, ask Claude to remake it.
 const SHARE_URL = "https://heathmck-a11y.github.io/wordtrail/";

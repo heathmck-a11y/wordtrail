@@ -93,7 +93,21 @@ details summary{cursor:pointer;font-weight:700}
 
 .lenbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0 12px}
 .lenbtn{min-width:104px;padding:16px 18px;font-size:1.5rem}
-#pauseOv,#lenModal{z-index:40}
+#pauseOv,#lenModal,#celeb{z-index:40}
+.celebbox{border-color:#f0a500}
+.celebemoji{font-size:4rem;line-height:1}
+.celeb-big h2{font-size:2.2rem;margin:6px 0}
+.cf{position:fixed;top:-8vh;font-size:1.8rem;pointer-events:none;z-index:45;animation:cfall linear forwards}
+@keyframes cfall{to{transform:translateY(115vh) rotate(540deg);opacity:.9}}
+#cert{display:none}
+body.printing-cert>*:not(#cert){display:none!important}
+body.printing-cert #cert{display:flex!important}
+#cert{flex-direction:column;align-items:center;justify-content:center;text-align:center;border:10px double #2f7d4f;padding:48px 40px;min-height:90vh;background:#fff;color:#2b2118}
+#cert h1{font-size:3rem;margin:0 0 10px}
+#cert .cn{font-size:3.4rem;font-weight:800;border-bottom:3px solid #2b2118;padding:0 40px;margin:18px 0}
+#cert p{font-size:1.5rem;margin:8px 0}
+#cert .sig{margin-top:50px;font-size:1.1rem;display:flex;gap:60px}
+#cert .sig span{border-top:2px solid #2b2118;padding-top:6px;min-width:220px}
 .ctxout{background:#fff;border:3px solid var(--line);border-radius:18px;padding:18px 22px;font-size:clamp(1.5rem,5vw,2.2rem);line-height:1.5;margin:10px 0}
 .ctxout p{margin:0 0 .45em}
 .ctxout.hl .lw{color:#17653a;font-weight:700}
@@ -177,6 +191,7 @@ details summary{cursor:pointer;font-weight:700}
     <div class="row">
       <button class="btn go" id="startBtn">Start</button>
       <button class="btn" id="reportBtn">Progress report</button>
+      <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
     <div class="row" style="margin-top:12px">
       <button class="btn" id="ctxBtn">Practice learned words in context</button>
@@ -253,6 +268,28 @@ details summary{cursor:pointer;font-weight:700}
   <div class="row noprint"><button class="btn go" id="ctxMore">New sentences</button><button class="btn" id="ctxCopy">Copy</button><button class="btn" id="ctxPrint">Print</button></div>
 </div>
 </section>
+<div class="modal" id="celeb" hidden>
+  <div class="mbox celebbox" id="celebBox">
+    <div class="celebemoji" id="celebEmoji">🥾</div>
+    <h2 id="celebTitle"></h2>
+    <p id="celebText"></p>
+    <div class="row" style="justify-content:center">
+      <button class="btn go" id="celebOk">Keep hiking</button>
+      <button class="btn" id="celebCert" hidden>Print certificate</button>
+    </div>
+  </div>
+</div>
+<div id="cert" aria-hidden="true">
+  <div style="font-size:4rem">🏔️🥾🚩</div>
+  <h1>Word Trail</h1>
+  <p>Certificate of Achievement</p>
+  <p>This certificate is awarded to</p>
+  <div class="cn" id="certName"></div>
+  <p>for checking all 300 high-frequency words on the trail</p>
+  <p id="certStars"></p>
+  <p id="certDate"></p>
+  <div class="sig"><span>Teacher</span><span>Date</span></div>
+</div>
 <div class="modal" id="lenModal" hidden>
   <div class="mbox">
     <div style="font-weight:800;font-size:1.2rem;margin-bottom:6px">Note for the grown-up</div>
@@ -402,6 +439,7 @@ function renderStudent() {
   const pct = Math.min(100, st.nextIdx / WORDS.length * 100);
   $("trailFill").style.width = pct + "%"; $("trailBoot").style.left = pct + "%";
   $("startAt").value = st.nextIdx + 1;
+  $("certBtn").hidden = st.nextIdx < WORDS.length;
   $("reportPanel").hidden = true; $("stuMsg").textContent = "";
   $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
 }
@@ -472,7 +510,7 @@ $("startBtn").dataset.ready = 1;
 function startSession() {
   const st = cur(); if (!st) return;
   session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
-    endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false, paused: false, pausedAt: 0,
+    endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false, paused: false, pausedAt: 0, startIdx: st.nextIdx,
     stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
   $("pauseOv").hidden = true; show("session"); startTimer(); nextCard();
 }
@@ -627,6 +665,7 @@ function endSession() {
     li("Set aside for next time:", S.aborted) +
     (st.nextIdx >= WORDS.length ? "<li><b>Every word has been checked.</b></li>" : `<li>Next word to check: #${st.nextIdx + 1}</li>`);
   show("summary");
+  celebrate(S, st);
 }
 $("sumBack").onclick = () => { renderStudent(); show("student"); };
 $("sumAgain").onclick = startSession;
@@ -1206,6 +1245,52 @@ $("ctxCopy").onclick = async () => {
   setTimeout(() => $("ctxCopy").textContent = "Copy", 1600);
 };
 $("ctxPrint").onclick = () => { try { window.print(); } catch (e) { $("ctxInfo").textContent = "Printing isn't available here. Use Copy and paste it into a document."; } };
+
+
+// Landmarks: a celebration each time the student passes a multiple of 25 words checked. All 300 gets the big one.
+const LANDMARK = 25;
+function confetti() {
+  const em = ["⭐","🎉","🥾","🌟","🎊","🚩"];
+  for (let i = 0; i < 40; i++) {
+    const e = document.createElement("div"); e.className = "cf"; e.textContent = em[i % em.length];
+    e.style.left = Math.random() * 96 + "vw"; e.style.animationDuration = (2.4 + Math.random() * 2.6) + "s"; e.style.animationDelay = (Math.random() * 1.2) + "s";
+    document.body.appendChild(e); setTimeout(() => e.remove(), 7000);
+  }
+}
+function celebrate(S, st) {
+  const done = st.nextIdx, before = S.startIdx || 0;
+  const grand = done >= WORDS.length && before < WORDS.length;
+  const lm = Math.floor(Math.min(done, WORDS.length) / LANDMARK) * LANDMARK;
+  if (!grand && !(lm > 0 && lm > Math.floor(before / LANDMARK) * LANDMARK)) return;
+  $("celebBox").classList.toggle("celeb-big", grand);
+  $("celebCert").hidden = !grand;
+  if (grand) {
+    $("celebEmoji").textContent = "🏆🎉🏔️";
+    $("celebTitle").textContent = st.name + ", you made it to the end of the trail!";
+    $("celebText").textContent = `All ${WORDS.length} words have been checked. ⭐ ${st.stars || 0} stars earned so far. Great job!`;
+    $("celebOk").textContent = "Done";
+  } else {
+    $("celebEmoji").textContent = "🚩🥾";
+    $("celebTitle").textContent = `${st.name} reached word ${lm}!`;
+    $("celebText").textContent = `${lm} of ${WORDS.length} words checked. ⭐ ${st.stars || 0} stars so far.`;
+    $("celebOk").textContent = "Keep hiking";
+  }
+  $("celeb").hidden = false; confetti();
+}
+$("celebOk").onclick = () => { $("celeb").hidden = true; };
+function printCertificate() {
+  const st = cur(); if (!st) return;
+  $("certName").textContent = st.name;
+  $("certStars").textContent = `⭐ ${st.stars || 0} stars earned`;
+  $("certDate").textContent = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  const pg = document.createElement("style"); pg.id = "pgland"; pg.textContent = "@page{size:landscape;margin:.4in}"; document.head.appendChild(pg);
+  document.body.classList.add("printing-cert");
+  const undo = () => { document.body.classList.remove("printing-cert"); const p = $("pgland"); if (p) p.remove(); };
+  window.addEventListener("afterprint", undo, { once: true });
+  try { window.print(); } catch (e) { undo(); $("stuMsg").textContent = "Printing isn't available here."; }
+  setTimeout(() => { if (document.body.classList.contains("printing-cert") && !document.hasFocus) undo(); }, 60000);
+}
+$("celebCert").onclick = printCertificate; $("certBtn").onclick = printCertificate;
 
 // The QR code image in the page is fixed to this address. If the app moves, ask Claude to remake it.
 const SHARE_URL = "https://heathmck-a11y.github.io/wordtrail/";

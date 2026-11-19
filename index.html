@@ -168,12 +168,11 @@ body.printing-cert #cert{display:flex!important}
   <div class="panel">
     <details>
       <summary>Back up or move your students</summary>
-      <p>Copy the backup text and keep it somewhere safe, or paste a backup here to restore it on another device.</p>
-      <textarea id="backupBox" aria-label="Backup text"></textarea>
+      <p>Your students' progress is saved only in this browser on this device. To keep it safe, or to move it to another device, save a backup file. Restoring a backup file replaces everything currently in this app.</p>
       <div class="row" style="margin-top:10px">
-        <button class="btn small" id="backupMake">Show backup</button>
-        <button class="btn small" id="backupCopy">Copy</button>
-        <button class="btn small warn" id="backupRestore">Restore from pasted backup</button>
+        <button class="btn small" id="backupSave">Save backup file</button>
+        <button class="btn small warn" id="backupRestore">Restore from backup file</button>
+        <input type="file" id="backupFile" accept=".json,application/json" hidden>
       </div>
       <p class="status" id="backupMsg"></p>
     </details>
@@ -414,18 +413,29 @@ function addStudent() {
 }
 $("addBtn").onclick = addStudent;
 $("newName").addEventListener("keydown", e => { if (e.key === "Enter") addStudent(); });
-$("backupMake").onclick = () => { $("backupBox").value = JSON.stringify(state); $("backupMsg").textContent = "Copy this text and keep it somewhere safe."; };
-$("backupCopy").onclick = async () => {
-  $("backupBox").value = JSON.stringify(state);
-  try { await navigator.clipboard.writeText($("backupBox").value); $("backupMsg").textContent = "Copied."; }
-  catch (e) { $("backupBox").select(); $("backupMsg").textContent = "Copy didn't work here. The text is selected, so press Ctrl+C or long-press and copy."; }
-};
-$("backupRestore").onclick = () => {
+$("backupSave").onclick = () => {
   try {
-    const d = JSON.parse($("backupBox").value);
-    if (!d || !Array.isArray(d.students)) throw 0;
-    state = d; save(); renderHome(); $("backupMsg").textContent = `Restored ${d.students.length} student(s).`;
-  } catch (e) { $("backupMsg").textContent = "That doesn't look like a backup. Paste the full backup text and try again."; }
+    const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `word-trail-backup-${today()}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    $("backupMsg").textContent = "Backup file saved. Look in your Downloads folder.";
+  } catch (e) { $("backupMsg").textContent = "Saving a file didn't work here. Try opening Word Trail in a regular browser tab."; }
+};
+$("backupRestore").onclick = () => { $("backupFile").value = ""; $("backupFile").click(); };
+$("backupFile").onchange = () => {
+  const f = $("backupFile").files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || !Array.isArray(d.students)) throw 0;
+      let ok = true;
+      try { ok = confirm(`Restore ${d.students.length} student(s) from this backup? This replaces everything currently in the app.`); } catch (e) {}
+      if (!ok) { $("backupMsg").textContent = "Nothing was changed."; return; }
+      state = d; save(); renderHome(); $("backupMsg").textContent = `Restored ${d.students.length} student(s).`;
+    } catch (e) { $("backupMsg").textContent = "That file isn't a Word Trail backup. Choose the backup file you saved."; }
+  };
+  r.readAsText(f);
 };
 
 // ====================================================================

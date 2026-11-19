@@ -394,7 +394,7 @@ function renderHome() {
     const c = counts(st);
     const row = document.createElement("div"); row.className = "stu";
     row.innerHTML = `<div class="grow"><div class="name">${esc(st.name)}</div>
-      <div class="meta">${c.known} known · ${c.learning} practicing · ${c.pending} to learn · ⭐ ${st.stars || 0}</div></div>`;
+      <div class="meta">${c.known} known · ${c.learning} practicing · ${c.pending} missed · ⭐ ${st.stars || 0}</div></div>`;
     const del = document.createElement("button"); del.className = "btn small"; del.textContent = "Delete";
     del.onclick = e => {
       e.stopPropagation();
@@ -496,7 +496,7 @@ function renderStudent() {
   const st = cur(); if (!st) return;
   const c = counts(st);
   $("stuName").textContent = st.name;
-  $("stuChips").innerHTML = `<span class="chip g">${c.known} known</span><span class="chip a">${c.learning} practicing</span><span class="chip r">${c.pending} to learn</span><span class="chip n">${c.unchecked} not checked</span><span class="chip a">⭐ ${st.stars || 0} stars</span>`;
+  $("stuChips").innerHTML = `<span class="chip g">${c.known} known</span><span class="chip a">${c.learning} practicing</span><span class="chip r">${c.pending} missed</span><span class="chip n">${c.unchecked} not checked</span><span class="chip a">⭐ ${st.stars || 0} stars</span>`;
   const next = st.nextIdx < WORDS.length ? `Next word to check: <b>#${st.nextIdx + 1}</b>` : "Every word has been checked.";
   const due = Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today()).length;
   $("nextInfo").innerHTML = next + (due ? ` · ${due} practicing word${due === 1 ? "" : "s"} to review today` : "") + (c.pending ? ` · ${c.pending} missed word${c.pending === 1 ? "" : "s"} to learn` : "");

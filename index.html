@@ -221,7 +221,7 @@ body.printing-cert #cert{display:flex!important}
       <span><i class="dot" style="background:var(--red)"></i>Missed, not yet learned</span>
       <span><i class="dot" style="background:var(--gray)"></i>Not checked</span>
     </div>
-    <div class="grid" id="wordGrid"></div>
+    <div id="wordGrid"></div>
   </div>
 </section>
 
@@ -495,7 +495,16 @@ function renderStudent() {
   $("startAt").value = st.nextIdx + 1;
   $("certBtn").hidden = st.nextIdx < WORDS.length;
   $("stuMsg").textContent = "";
-  $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
+  // Word list in blocks of 100. The block with the next word to check starts open.
+  const tile = (w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`;
+  const openBlock = Math.min(Math.floor(st.nextIdx / 100), Math.ceil(WORDS.length / 100) - 1);
+  let blocks = "";
+  for (let b = 0; b * 100 < WORDS.length; b++) {
+    const from = b * 100, to = Math.min(from + 100, WORDS.length), ws = WORDS.slice(from, to);
+    const known = ws.filter(w => st.words[w] && st.words[w].s === "known").length;
+    blocks += `<details${b === openBlock ? " open" : ""} style="margin-bottom:8px"><summary>Words ${from + 1} to ${to} <span style="font-weight:400;color:var(--soft)">(${known} known)</span></summary><div class="grid">${ws.map((w, k) => tile(w, from + k)).join("")}</div></details>`;
+  }
+  $("wordGrid").innerHTML = blocks;
 }
 $("stuBack").onclick = () => { renderHome(); show("home"); };
 $("stuReset").onclick = () => {

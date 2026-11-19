@@ -203,11 +203,14 @@ body.printing-cert #cert{display:flex!important}
     <div class="row" style="margin-top:14px;gap:6px">
       <button class="btn quiet" id="ctxBtn">Practice learned words in context</button>
     </div>
-    <div class="row" style="margin-top:12px">
-      <label for="startAt">Check from word #</label>
-      <input type="number" id="startAt" min="1" max="300" style="width:90px">
-      <button class="btn small" id="startAtBtn">Set</button>
-    </div>
+    <details style="margin-top:12px">
+      <summary style="font-weight:600;font-size:.88rem;color:var(--soft)">More options</summary>
+      <div class="row" style="margin-top:10px">
+        <label for="startAt">Check from word #</label>
+        <input type="number" id="startAt" min="1" max="300" style="width:90px">
+        <button class="btn small" id="startAtBtn">Set</button>
+      </div>
+    </details>
     <p class="status" id="stuMsg"></p>
   </div>
   <div class="panel">

@@ -204,12 +204,7 @@ body.printing-cert #cert{display:flex!important}
     </div>
     <details style="margin-top:12px">
       <summary style="font-weight:600;font-size:.88rem;color:var(--soft)">More options</summary>
-      <div class="row" style="margin-top:10px">
-        <label for="startAt">Check from word #</label>
-        <input type="number" id="startAt" min="1" max="300" style="width:90px">
-        <button class="btn small" id="startAtBtn">Set</button>
-      </div>
-      <fieldset style="border:0;padding:0;margin:14px 0 0">
+      <fieldset style="border:0;padding:0;margin:10px 0 0">
         <legend style="font-weight:700;padding:0;margin-bottom:6px">When a word is missed, the correction prompt asks the student to</legend>
         <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="sounds"> say the sounds in the word</label>
         <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="spell"> spell the word</label>
@@ -507,7 +502,6 @@ function renderStudent() {
   $("nextInfo").innerHTML = next + (due ? ` · ${due} practicing word${due === 1 ? "" : "s"} to review today` : "") + (c.pending ? ` · ${c.pending} missed word${c.pending === 1 ? "" : "s"} to learn` : "");
   $("startBtn").textContent = Object.keys(st.words).length ? "Back on the trail" : "Hit the trail";
   renderTrail(st);
-  $("startAt").value = st.nextIdx + 1;
   document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.checked = r.value === (st.feedback || "sounds"); });
   $("certBtn").hidden = st.nextIdx < WORDS.length;
   $("stuMsg").textContent = "";
@@ -529,11 +523,6 @@ $("stuReset").onclick = () => {
   else { b.dataset.armed = 1; b.textContent = "Tap again to erase progress"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Reset this student"; }, 3000); }
 };
 document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.onchange = () => { if (r.checked && cur()) { cur().feedback = r.value; save(); } }; });
-$("startAtBtn").onclick = () => {
-  const n = parseInt($("startAt").value, 10);
-  if (!(n >= 1 && n <= WORDS.length)) { $("stuMsg").textContent = "Enter a word number from 1 to 300."; return; }
-  cur().nextIdx = n - 1; save(); renderStudent(); $("stuMsg").textContent = `Checking will continue from word #${n} ("${WORDS[n - 1]}").`;
-};
 // ====================================================================
 // SESSION: check new words, learn missed words with incremental rehearsal
 // ====================================================================

@@ -197,7 +197,6 @@ body.printing-cert #cert{display:flex!important}
       <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
     <div class="row" style="margin-top:14px;gap:6px">
-      <button class="btn quiet" id="reportBtn">Progress report</button>
       <button class="btn quiet" id="ctxBtn">Practice learned words in context</button>
     </div>
     <div class="row" style="margin-top:12px">
@@ -206,11 +205,6 @@ body.printing-cert #cert{display:flex!important}
       <button class="btn small" id="startAtBtn">Set</button>
     </div>
     <p class="status" id="stuMsg"></p>
-  </div>
-  <div class="panel" id="reportPanel" hidden>
-    <h2>Progress report</h2>
-    <textarea id="reportBox" aria-label="Progress report" readonly></textarea>
-    <div class="row" style="margin-top:10px"><button class="btn small" id="reportCopy">Copy</button></div>
   </div>
   <div class="panel">
     <h2>All 300 words</h2>
@@ -443,7 +437,7 @@ function renderStudent() {
   $("trailFill").style.width = pct + "%"; $("trailBoot").style.left = pct + "%";
   $("startAt").value = st.nextIdx + 1;
   $("certBtn").hidden = st.nextIdx < WORDS.length;
-  $("reportPanel").hidden = true; $("stuMsg").textContent = "";
+  $("stuMsg").textContent = "";
   $("wordGrid").innerHTML = WORDS.map((w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`).join("");
 }
 $("stuBack").onclick = () => { renderHome(); show("home"); };
@@ -457,23 +451,6 @@ $("startAtBtn").onclick = () => {
   if (!(n >= 1 && n <= WORDS.length)) { $("stuMsg").textContent = "Enter a word number from 1 to 300."; return; }
   cur().nextIdx = n - 1; save(); renderStudent(); $("stuMsg").textContent = `Checking will continue from word #${n} ("${WORDS[n - 1]}").`;
 };
-function report(st) {
-  const L = k => Object.keys(st.words).filter(w => st.words[w].s === k).sort((a, b) => WORDS.indexOf(a) - WORDS.indexOf(b));
-  const c = counts(st);
-  return [`${st.name}, high-frequency words, ${today()}`,
-    `Checked through word #${st.nextIdx} of ${WORDS.length}`,
-    `Known (${c.known}): ${L("known").join(", ") || "none yet"}`,
-    `Learned, still practicing (${c.learning}): ${L("learning").map(w => `${w} (${st.words[w].days}/${DAYS_TO_KNOWN} days)`).join(", ") || "none"}`,
-    `Stars: ${st.stars || 0}`,
-    `Missed, not yet learned (${c.pending}): ${L("pending").join(", ") || "none"}`].join("\n");
-}
-$("reportBtn").onclick = () => { $("reportBox").value = report(cur()); $("reportPanel").hidden = false; };
-$("reportCopy").onclick = async () => {
-  try { await navigator.clipboard.writeText($("reportBox").value); $("reportCopy").textContent = "Copied"; }
-  catch (e) { $("reportBox").select(); $("reportCopy").textContent = "Select and copy"; }
-  setTimeout(() => $("reportCopy").textContent = "Copy", 1800);
-};
-
 // ====================================================================
 // SESSION: check new words, learn missed words with incremental rehearsal
 // ====================================================================

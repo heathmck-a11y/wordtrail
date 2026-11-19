@@ -320,7 +320,6 @@ body.printing-cert #cert{display:flex!important}
     <div class="word" id="modalWord"></div>
     <p id="modalText"></p>
     <div class="row" style="justify-content:center">
-      <button class="btn small" id="hearBtn">Hear it</button>
       <button class="btn go" id="modalBtn">Continue</button>
     </div>
   </div>
@@ -663,7 +662,6 @@ function renderSession() {
   }
 }
 $("modalBtn").onclick = () => { session.modal = null; nextCard(); };
-$("hearBtn").onclick = () => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance($("modalWord").textContent === "I" ? "I" : $("modalWord").textContent.toLowerCase()); u.lang = "en-US"; u.rate = .8; speechSynthesis.speak(u); } catch (e) {} };
 $("endBtn").onclick = endSession;
 
 // ====================================================================

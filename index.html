@@ -38,6 +38,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:4px soli
 .btn.go{background:var(--accent);color:#fff;border-color:var(--ink)}
 .btn.small{padding:6px 12px;font-size:.9rem;box-shadow:0 3px 0 var(--ink)}
 .btn.warn{background:#fde8e8}
+.btn.big{font-size:1.5rem;padding:16px 40px;border-radius:18px;box-shadow:0 6px 0 var(--ink)}
+.btn.big:active{box-shadow:0 2px 0 var(--ink)}
+.btn.quiet{background:none;border:0;box-shadow:none;padding:4px 8px;font-weight:600;font-size:.88rem;color:var(--soft);text-decoration:underline}
+.btn.quiet:active{transform:none}
 .panel{background:var(--paper);border:3px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 input[type=text],input[type=number],textarea{font:inherit;padding:10px 12px;border:3px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
@@ -189,12 +193,12 @@ body.printing-cert #cert{display:flex!important}
     <div class="trail"><i id="trailFill"></i><span class="boot" id="trailBoot">🥾</span><span class="flag">🚩</span></div>
     <div id="nextInfo" style="margin:12px 0"></div>
     <div class="row">
-      <button class="btn go" id="startBtn">Start</button>
-      <button class="btn" id="reportBtn">Progress report</button>
+      <button class="btn go big" id="startBtn">Start</button>
       <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
-    <div class="row" style="margin-top:12px">
-      <button class="btn" id="ctxBtn">Practice learned words in context</button>
+    <div class="row" style="margin-top:14px;gap:6px">
+      <button class="btn quiet" id="reportBtn">Progress report</button>
+      <button class="btn quiet" id="ctxBtn">Practice learned words in context</button>
     </div>
     <div class="row" style="margin-top:12px">
       <label for="startAt">Check from word #</label>

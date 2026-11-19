@@ -550,7 +550,7 @@ function nextCard() {
     const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
     if (w.length) { S.queue = w.map(word => ({ word, role: "review" })); return nextCard(); }
   }
-  if (S.pendingRuns < PENDING_RUNS_MAX) {
+  if (!S.checking && S.pendingRuns < PENDING_RUNS_MAX) {
     const p = Object.keys(st.words).filter(k => st.words[k].s === "pending" && !S.skip.includes(k));
     if (p.length && startRun(p[0])) {
       S.pendingRuns++;
@@ -559,6 +559,7 @@ function nextCard() {
     }
   }
   if (st.nextIdx >= WORDS.length) return endSession();
+  S.checking = true;   // once new words are being checked, earlier-missed words wait for the next session
   S.cur = { word: WORDS[st.nextIdx], role: "check" };
   renderSession();
 }
@@ -572,6 +573,7 @@ function creditDay(w) {
 function answer(yes) {
   const S = session, st = cur(), c = S.cur;
   if (!c || S.modal) return;
+  const nowMs = Date.now(); if (nowMs - (S.lastAns || 0) < 350) return; S.lastAns = nowMs;   // ignore accidental double taps
   S.undo.push(JSON.stringify({ st, S: Object.assign({}, S, { undo: [] }) })); if (S.undo.length > 40) S.undo.shift();
   const teach = (extra) => { S.modal = Object.assign({ type: "teach", word: c.word, run: false }, extra); save(); renderSession(); };
   if (c.role === "check") {

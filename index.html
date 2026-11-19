@@ -217,7 +217,7 @@ body.printing-cert #cert{display:flex!important}
     <h2>All 300 words</h2>
     <div class="legend">
       <span><i class="dot" style="background:var(--green)"></i>Known</span>
-      <span><i class="dot" style="background:var(--amber)"></i>Learned, still practicing</span>
+      <span><i class="dot" style="background:var(--amber)"></i>Learning (needs 3 days)</span>
       <span><i class="dot" style="background:var(--red)"></i>Missed, not yet learned</span>
       <span><i class="dot" style="background:var(--gray)"></i>Not checked</span>
     </div>
@@ -723,7 +723,7 @@ function endSession() {
     `<li><b>⭐ Stars earned today:</b> ${S.stars} (total ${st.stars || 0})</li>` +
     `<li><b>Words checked:</b> ${S.checked} (${S.checkedYes} read, ${S.checkedNo} missed)</li>` +
     (S.timeUp ? "<li><b>Time limit reached.</b></li>" : "") +
-    li("Learned today:", S.learned) + li("Now known (3 days):", S.mastered) +
+    li("Started learning today:", S.learned) + li("Now known (3 days):", S.mastered) +
     (S.reviewed ? `<li><b>Warm-up words reviewed:</b> ${S.reviewed}</li>` : "") +
     li("Missed in warm-up, will be relearned:", S.reviewMissed) + li("Known words missed while practicing:", S.anchorMissed) +
     li("Set aside for next time:", S.aborted) +

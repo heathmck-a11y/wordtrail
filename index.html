@@ -158,7 +158,7 @@ body.printing-cert #cert{display:flex!important}
     <details>
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
-      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
+      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" (Under More options on the student page you can switch this to "Spell [word]. What word?" instead.) Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
       <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
@@ -209,6 +209,11 @@ body.printing-cert #cert{display:flex!important}
         <input type="number" id="startAt" min="1" max="300" style="width:90px">
         <button class="btn small" id="startAtBtn">Set</button>
       </div>
+      <fieldset style="border:0;padding:0;margin:14px 0 0">
+        <legend style="font-weight:700;padding:0;margin-bottom:6px">When a word is missed, the correction prompt asks the student to</legend>
+        <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="sounds"> say the sounds in the word</label>
+        <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="spell"> spell the word</label>
+      </fieldset>
     </details>
     <p class="status" id="stuMsg"></p>
   </div>
@@ -503,6 +508,7 @@ function renderStudent() {
   $("startBtn").textContent = Object.keys(st.words).length ? "Back on the trail" : "Hit the trail";
   renderTrail(st);
   $("startAt").value = st.nextIdx + 1;
+  document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.checked = r.value === (st.feedback || "sounds"); });
   $("certBtn").hidden = st.nextIdx < WORDS.length;
   $("stuMsg").textContent = "";
   // Word list in blocks of 100. The block with the next word to check starts open.
@@ -522,6 +528,7 @@ $("stuReset").onclick = () => {
   if (b.dataset.armed) { const st = cur(); st.words = {}; st.nextIdx = 0; save(); b.dataset.armed = ""; b.textContent = "Reset this student"; renderStudent(); }
   else { b.dataset.armed = 1; b.textContent = "Tap again to erase progress"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Reset this student"; }, 3000); }
 };
+document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.onchange = () => { if (r.checked && cur()) { cur().feedback = r.value; save(); } }; });
 $("startAtBtn").onclick = () => {
   const n = parseInt($("startAt").value, 10);
   if (!(n >= 1 && n <= WORDS.length)) { $("stuMsg").textContent = "Enter a word number from 1 to 300."; return; }
@@ -709,12 +716,13 @@ function renderSession() {
   $("modal").hidden = !m;
   if (m) {
     $("modalTitle").textContent = m.title || "";
-    $("modalWord").innerHTML = sounds(m.word).map(g => `<span class="snd">${esc(g)}</span>`).join("");
+    const spell = st.feedback === "spell";
+    $("modalWord").innerHTML = spell ? esc(m.word) : sounds(m.word).map(g => `<span class="snd">${esc(g)}</span>`).join("");
     { const n = m.word.length, rem = n <= 3 ? 11 : n <= 5 ? 9 : n <= 7 ? 7 : n <= 9 ? 5.5 : 4.2;
       $("modalWord").style.fontSize = `min(${rem}rem, ${Math.max(10, Math.floor(80 / (n * 0.6)))}vw)`; }
     // Correction script the grown-up reads aloud
     const w = m.word;
-    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. <i style="color:var(--soft)">[pause]</i> What are the sounds in <b>${esc(w)}</b>? What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
+    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. <i style="color:var(--soft)">[pause]</i> ${spell ? `Spell <b>${esc(w)}</b>.` : `What are the sounds in <b>${esc(w)}</b>?`} What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
     $("modalBtn").textContent = m.run ? (m.again ? "Keep going" : "Start learning") : "Next";
   }
 }

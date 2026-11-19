@@ -154,7 +154,7 @@ body.printing-cert #cert{display:flex!important}
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. What are the sounds in [word]? Spell [word]. What word?" Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
-      <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the student finishes the word they are on and the session ends with a summary. The next session picks up where this one left off.</p>
+      <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
     </details>
   </div>
@@ -539,12 +539,28 @@ function abortRun() {
   const S = session, w = S.run.word; S.queue = []; S.run = null; S.skip.push(w); S.aborted.push(w);
   cur().words[w].s = "pending"; save();
 }
+// Keeps the same known word from showing on two cards in a row by swapping it with a later known-word card.
+function noRepeat(q, prev) {
+  const bad = i => i > 0 ? q[i].word === q[i - 1].word : q[i].word === prev;
+  const clash = i => i >= 0 && i < q.length && (bad(i) || (i + 1 < q.length && q[i + 1].word === q[i].word));
+  for (let i = 0; i < q.length; i++) {
+    if (!bad(i) || q[i].role !== "anchor") continue;
+    for (let j = i + 1; j < q.length; j++) {
+      if (q[j].role !== "anchor") continue;
+      [q[i], q[j]] = [q[j], q[i]];
+      if (!clash(i) && !clash(j) && !clash(i + 1) && !clash(j + 1)) break;
+      [q[i], q[j]] = [q[j], q[i]];
+    }
+  }
+}
 function nextCard() {
   const S = session, st = cur();
   S.modal = null;
-  if (S.queue.length && (S.run || !S.timeUp)) { S.cur = S.queue.shift(); return renderSession(); }
+  if (!S.timeUp && !S.paused && Date.now() >= S.endAt) S.timeUp = true;
+  // Time is up: stop after the card the student just had. A word still being rehearsed stays red and comes back next session.
+  if (S.timeUp) { if (S.run) abortRun(); return endSession(); }
+  if (S.queue.length) { S.cur = S.queue.shift(); return renderSession(); }
   if (S.run) finishRun();
-  if (S.timeUp) return endSession();
   if (!S.warmDone) {
     S.warmDone = true;
     const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
@@ -600,6 +616,7 @@ function answer(yes) {
     else {
       const e = st.words[c.word]; e.s = "learning"; e.days = 0; e.last = today(); S.anchorMissed.push(c.word);
       S.queue.splice(Math.min(2, S.queue.length), 0, { word: c.word, role: "anchor" });
+      noRepeat(S.queue, c.word);
       return teach({ run: true, again: true, title: "Not yet" });
     }
   }
@@ -629,7 +646,7 @@ function renderSession() {
     const done = Math.max(0, S.run.total - S.queue.length), tot = Math.max(S.run.total, done);
     $("cardCount").textContent = `Card ${done} of ${tot}`; $("barFill").style.width = Math.min(100, done / tot * 100) + "%";
     $("cardHint").textContent = c.role === "target" ? "The new word." : "A word the student knows."; }
-  if (S.timeUp) $("cardHint").textContent = "Time is up. After this word, you are done.";
+  if (S.timeUp) $("cardHint").textContent = "Time is up. This is the last card.";
   $("undoBtn").disabled = !S.undo.length;
   $("starLine").textContent = `⭐ ${S.stars} today`;
   const m = S.modal;

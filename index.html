@@ -1351,9 +1351,10 @@ function celebrate(S, st) {
     $("celebText").textContent = `All ${WORDS.length} words have been checked. ⭐ ${st.stars || 0} stars earned so far. Great job!`;
     $("celebOk").textContent = "Done";
   } else {
-    $("celebEmoji").textContent = "🚩🥾";
-    $("celebTitle").textContent = `${st.name} reached word ${lm}!`;
-    $("celebText").textContent = `${lm} of ${WORDS.length} words checked. ⭐ ${st.stars || 0} stars so far.`;
+    const place = LANDMARKS[lm / LANDMARK - 1] || ["the next landmark", "🚩"];
+    $("celebEmoji").textContent = place[1] + "🥾";
+    $("celebTitle").textContent = `Welcome to ${place[0]}!`;
+    $("celebText").textContent = `${st.name} reached word ${lm}! ${lm} of ${WORDS.length} words checked. ⭐ ${st.stars || 0} stars so far.`;
     $("celebOk").textContent = "Keep hiking";
   }
   $("celeb").hidden = false; confetti();

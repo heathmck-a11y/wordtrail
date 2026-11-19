@@ -189,7 +189,12 @@ body.printing-cert #cert{display:flex!important}
     <button class="btn small" id="stuBack">Students</button>
     <button class="btn small warn" id="stuReset">Reset this student</button>
   </div>
-  <h1 id="stuName"></h1>
+  <div class="row" style="gap:12px;margin:6px 0 2px"><h1 id="stuName" style="margin:0"></h1><button class="btn quiet" id="nameEdit">Edit name</button></div>
+  <div class="row" id="nameForm" style="margin:8px 0" hidden>
+    <input type="text" id="nameInput" maxlength="30" autocomplete="off" aria-label="Student name">
+    <button class="btn go small" id="nameSave">Save</button>
+    <button class="btn small" id="nameCancel">Cancel</button>
+  </div>
   <div class="chips" id="stuChips"></div>
   <div class="panel">
     <div class="trailmap"><svg id="trailSvg" viewBox="0 0 800 540" role="img" aria-label="Winding trail with a landmark every 25 words"></svg></div>
@@ -492,10 +497,15 @@ function renderTrail(st) {
     $("trailCap").textContent = `Word ${n} of ${WORDS.length}. ${togo} more word${togo === 1 ? "" : "s"} to ${LANDMARKS[nextLm][0]} ${LANDMARKS[nextLm][1]}`;
   }
 }
+$("nameEdit").onclick = () => { const st = cur(); if (!st) return; $("nameInput").value = st.name; $("nameForm").hidden = false; $("nameInput").focus(); $("nameInput").select(); };
+function saveName() { const v = $("nameInput").value.trim(), st = cur(); if (!v || !st) { $("nameInput").focus(); return; } st.name = v; save(); renderStudent(); }
+$("nameSave").onclick = saveName;
+$("nameCancel").onclick = () => { $("nameForm").hidden = true; };
+$("nameInput").addEventListener("keydown", e => { if (e.key === "Enter") saveName(); if (e.key === "Escape") $("nameForm").hidden = true; });
 function renderStudent() {
   const st = cur(); if (!st) return;
   const c = counts(st);
-  $("stuName").textContent = st.name;
+  $("stuName").textContent = st.name; $("nameForm").hidden = true;
   $("stuChips").innerHTML = `<span class="chip g">${c.known} known</span><span class="chip a">${c.learning} practicing</span><span class="chip r">${c.pending} missed</span><span class="chip n">${c.unchecked} not checked</span><span class="chip a">⭐ ${st.stars || 0} stars</span>`;
   const next = st.nextIdx < WORDS.length ? `Next word to check: <b>#${st.nextIdx + 1}</b>` : "Every word has been checked.";
   const due = Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today()).length;

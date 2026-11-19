@@ -120,7 +120,10 @@ body.printing-cert #cert{display:flex!important}
 .ctxout.hl .lw{color:#17653a;font-weight:700}
 .ctxtitle{font-weight:800;font-size:1rem!important;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
 .ctxmode[aria-pressed="true"]{background:var(--accent);color:#fff}
-@media print{.noprint{display:none!important}body{background:#fff!important}.wrap{padding:0}.ctxout{border:0;font-size:22pt;padding:0}.ctxout .lw{color:inherit!important;font-weight:inherit!important}}
+.lmstory{background:#fff;border:3px solid var(--line);border-radius:18px;padding:14px 22px;margin:12px 0;font-size:clamp(1.4rem,4.5vw,2rem);line-height:1.5}
+.lmstory h2{font-size:.95rem;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}
+.lmstory p{margin:0 0 .3em}
+@media print{.lmstory{border:0;border-bottom:1px dashed #999;border-radius:0;font-size:17pt;line-height:1.35;padding:8pt 0;margin:0;break-inside:avoid}.lmstory p{margin:0 0 .12em}#lmstories h1{font-size:22pt;margin:0}#lmstories .sub{margin:0 0 6pt;font-size:12pt}.lmstory h2{font-size:11pt;color:#555}.noprint{display:none!important}body{background:#fff!important}.wrap{padding:0}.ctxout{border:0;font-size:22pt;padding:0}.ctxout .lw{color:inherit!important;font-weight:inherit!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -160,6 +163,7 @@ body.printing-cert #cert{display:flex!important}
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" (Under More options on the student page you can switch this to "Spell [word]. What word?" instead.) Then the app mixes it in with words the student already knows (up to 8). The known words come up in a random order each round so the student reads the word and not the pattern.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 3 different days it counts as known. A miss starts the count over. Each session begins with a quick warm-up on yellow words.</p>
+      <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words, such as words 1 to 25 at the first landmark. You can print them again later from the student page.</p>
       <p><b>Stars.</b> 1 star for each word the student reads at the check. 2 stars when a missed word is learned. 1 star each time a practicing word is read right on a new day, and 2 more when it turns green. Stars keep adding up across sessions.</p>
       <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Progress is saved in this browser on this device.</p>
@@ -206,6 +210,7 @@ body.printing-cert #cert{display:flex!important}
     </div>
     <div class="row" style="margin-top:14px;gap:6px">
       <button class="btn quiet" id="ctxBtn">Practice learned words in context</button>
+      <button class="btn quiet" id="lmBtn">Landmark stories</button>
     </div>
     <details style="margin-top:12px">
       <summary style="font-weight:600;font-size:.88rem;color:var(--soft)">More options</summary>
@@ -262,6 +267,21 @@ body.printing-cert #cert{display:flex!important}
 
 </div>
 
+<!-- LANDMARK STORIES -->
+<section id="lmstories" hidden>
+<div class="wrap" style="padding-top:0">
+  <div class="top noprint"><button class="btn small" id="lmBack">Back to student</button></div>
+  <h1 id="lmTitle"></h1>
+  <p class="sub" id="lmFor"></p>
+  <div class="row noprint" style="margin-bottom:8px">
+    <label for="lmBlock">Words</label>
+    <select id="lmBlock" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff"></select>
+    <button class="btn go" id="lmPrint">Print</button>
+  </div>
+  <div id="lmOut"></div>
+  <p class="status noprint" id="lmWords"></p>
+</div>
+</section>
 <!-- IN CONTEXT -->
 <section id="context" hidden>
 <div class="wrap" style="padding-top:0">
@@ -284,6 +304,7 @@ body.printing-cert #cert{display:flex!important}
     <p id="celebText"></p>
     <div class="row" style="justify-content:center">
       <button class="btn go" id="celebOk">Keep hiking</button>
+      <button class="btn" id="celebStories" hidden>Print stories</button>
       <button class="btn" id="celebCert" hidden>Print certificate</button>
     </div>
   </div>
@@ -371,7 +392,7 @@ function esc(t) { const d = document.createElement("div"); d.textContent = t; re
 
 let curId = null, session = null;
 const cur = () => state.students.find(s => s.id === curId);
-function show(id) { for (const s of ["home", "student", "session", "summary", "context"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+function show(id) { for (const s of ["home", "student", "session", "summary", "context", "lmstories"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
 
 // Word entries: st.words[word] = { s: 'known'|'learning'|'pending', days, last, first }
 //   known    = read at the check, or learned and then read right on 3 days (green)
@@ -1343,6 +1364,8 @@ function celebrate(S, st) {
   const grand = done >= WORDS.length && before < WORDS.length;
   const lm = Math.floor(Math.min(done, WORDS.length) / LANDMARK) * LANDMARK;
   if (!grand && !(lm > 0 && lm > Math.floor(before / LANDMARK) * LANDMARK)) return;
+  lmTarget = grand ? WORDS.length / LANDMARK : lm / LANDMARK;
+  $("celebStories").hidden = false; $("celebStories").textContent = `Print stories for words ${(lmTarget - 1) * LANDMARK + 1} to ${lmTarget * LANDMARK}`;
   $("celebBox").classList.toggle("celeb-big", grand);
   $("celebCert").hidden = !grand;
   if (grand) {
@@ -1360,6 +1383,33 @@ function celebrate(S, st) {
   $("celeb").hidden = false; confetti();
 }
 $("celebOk").onclick = () => { $("celeb").hidden = true; };
+// Stories for each 25-word block, shown when a landmark is reached. Each story uses only words from that block, earlier words, and simple sound-it-out words.
+const LM_STORIES = {"1": [{"t": "The Cat", "l": ["I have a cat.", "The cat was in a bag.", "That is not a bag for a cat!", "It is at the mat with you."]}, {"t": "Dan and the Dog", "l": ["Dan and a dog ran from a hill to the pond.", "The dog is big.", "Dan is not as big as the dog.", "He sat on a log.", "The dog sat on a rock."]}, {"t": "Are You a Cat?", "l": ["Are you a cat or a dog?", "You are not a cat.", "You are not a dog.", "You can be a pup!", "This is a bag of ham for you."]}], "2": [{"t": "Tim and His Pup", "l": ["Tim had a pup.", "His pup can run and hop.", "It will dig in the mud.", "When the pup is in the mud, Tim is mad.", "But Tim is glad about his pup."]}, {"t": "What Is in the Bag?", "l": ["What is in the bag?", "Is it a cat? No!", "Is it a hen? No!", "If it is not a cat or a hen, what is it?", "It is one big bug!", "They all ran out."]}, {"t": "By the Pond", "l": ["We sit by the pond.", "It is hot, so we swim.", "There is an ant on the log!", "Do not sit on it!", "Up it ran on my leg.", "Would your pup swim?", "It would! No more ants!"]}], "3": [{"t": "Her Cat", "l": ["She has a cat.", "Her cat likes to nap in the sun.", "It is time to get up!", "Then it will run.", "Who is that?", "It is her cat!"]}, {"t": "The Pond", "l": ["We ran to the pond.", "Some ducks were in the pond.", "I could see them swim.", "Their legs were wet.", "Now I will hop into the pond with them!", "How fun it is!"]}, {"t": "A New Hat", "l": ["Meg has a new hat.", "It is red.", "Other people like it.", "Which hat is new?", "Only one hat is new.", "It has been in the van.", "Just Meg and me got it."]}], "4": [{"t": "Our Van", "l": ["Here is our van.", "It is very big.", "Dad will go to the shop in it.", "Two of us can go.", "Mom may go with us.", "Then we go back home."]}, {"t": "The Hill", "l": ["I know a hill.", "It is over the pond.", "Many ants are on the hill.", "Dad and I ran up it.", "I got up first!", "Where is Dad?", "He is down the hill, back by the pond."]}, {"t": "Good Ham", "l": ["Dad will make good ham.", "It is hot, hot, hot!", "Mom did not have any.", "These buns are good, also.", "I have more than Dad!", "Use a bun, this way.", "Dad is glad, and we all hug him."]}], "5": [{"t": "A Hot Day", "l": ["It is a hot day.", "It is too hot to work.", "We want to swim.", "After his work, Dad will take us to the pond.", "It is a long way, but it is fun."]}, {"t": "Help Mom", "l": ["Mom must find her bag.", "I want to help.", "Look in the van.", "Look through the hut.", "Look in the tub!", "Well, it is right here!", "It was on the bed."]}, {"t": "The Little Pig", "l": ["The little pig is most glad in the mud.", "Its mud pit was made by the pig.", "Each day, it digs more.", "It is too much mud for Dad!", "It should not get out, because the mud is so good.", "Even Dad can not get it out!", "Think before you hug it."]}], "6": [{"t": "The Old Man", "l": ["An old man sat by the water.", "He got a rod and a hat.", "Why is the man still?", "He needs a fish!", "Come back, fish, come back!", "He did not get off the log."]}, {"t": "My Name", "l": ["My name is {N}.", "I am big.", "My pup has the same name!", "I say it, and the pup runs around me.", "It never gets off the mat."]}, {"t": "A Great Gift", "l": ["Dad got something for me.", "It is such a great gift!", "I want another one.", "Next time, I will get it again.", "Those are the last ones in the world."]}], "7": [{"t": "At School", "l": ["We went to school.", "Three of us read at a desk.", "Every one has a place.", "The best part is the song.", "Tell me what you thought."]}, {"t": "The House", "l": ["A small house is under a high hill.", "Part of it is red.", "Dad found it.", "He put his bag in it.", "Both of us thought it might be great."]}, {"t": "A Good Year", "l": ["It was a good year.", "I went away to camp.", "I set up a tent.", "It was really fun while it was hot.", "That is life!", "I own the tent."]}], "8": [{"t": "The Book", "l": ["Meg has a book.", "It is white, with a red top.", "She gives it to Tim.", "Tim came to get it.", "Tim reads it, and he keeps it.", "He always reads it to the end."]}, {"t": "My Room", "l": ["I live in a small room.", "My room is not big.", "There is a bed and a desk.", "The rug is left of the bed.", "Between the desk and the bed is a lamp.", "I am sure it is better than a tent.", "A room without a lamp is not fun."]}, {"t": "Free Stuff", "l": ["Is it free? Yes!", "I read the information.", "Few things are free.", "Let me show you.", "You do not need money.", "Once, I got a hat for free.", "It was hard to give it up."]}], "9": [{"t": "Night", "l": ["It is night.", "The children get in bed.", "Dad reads a page.", "He puts out the lamp.", "Please be still until day.", "Since it is night, no one will play."]}, {"t": "In the City", "l": ["A group of men run in the city.", "It was a large city.", "They had food in hand.", "They run enough to be hot.", "Each man has a number on his head.", "Today they will play."]}, {"t": "The Black Cat", "l": ["The black cat ran up the line.", "Up, up, up in the air!", "Did you ever see a cat in the air?", "Please call the men.", "They open a net.", "They try to help the cat down."]}], "10": [{"t": "The Red Car", "l": ["My family has a red car.", "It is a real fast car.", "Mother took us to the shop.", "During the day, we saw a lot of people.", "It is far, but we are not sad.", "The car is full of bags."]}, {"t": "Dad's Job", "l": ["Someone told Dad about a job.", "It is an important job.", "Dad must change his hat.", "However, he can not find it.", "Mother can find anything.", "She told him it is on his head!"]}, {"t": "The Far Hill", "l": ["A person sat on the side of a far hill.", "A light was on in the hut.", "Of course, the person went to see.", "A red car was against the hut.", "It was full of people.", "The person did feel glad."]}], "11": [{"t": "The Game", "l": ["We play a game together.", "Meg and Tim run along the path.", "Meg is first, and Tim is second.", "Tim is young, and Meg is not.", "Soon the game is done."]}, {"t": "The Box", "l": ["Dad has a special box.", "It is red and black.", "Nothing is in it yet.", "He will buy a gift for it.", "It is a kind gift, so he will take care.", "He puts it in the box."]}, {"t": "The Word List", "l": ["I have a list of words.", "I have seen each word.", "I often read the list in the sun.", "Though it is long, I will start.", "In order, I read each word.", "Then the job is done."]}], "12": [{"t": "Four Ducks", "l": ["Here is a story about four ducks.", "The ducks sat in front of the pond.", "They heard a sound.", "Oh no! It was a big frog!", "The ducks were almost in the water.", "They ran up on the land."]}, {"t": "The Problem", "l": ["I have a problem.", "I ask Mom what it will mean.", "She is able to help.", "She tells me to write it down.", "Maybe it is not so bad.", "Now I learn about it."]}, {"t": "The Shop", "l": ["A long time ago, a man had a shop on the street.", "It was his business.", "He had everything: hats, bags, and jam.", "Nothing else was above the shop but the sun.", "He did not stop.", "His face was glad."]}]};
+let lmTarget = 1;
+function renderLm(k) {
+  const st = cur(); if (!st) return;
+  const from = (k - 1) * LANDMARK + 1, to = k * LANDMARK;
+  $("lmTitle").textContent = `Stories for words ${from} to ${to}`;
+  $("lmFor").textContent = `For ${st.name}`;
+  $("lmOut").innerHTML = (LM_STORIES[k] || []).map(x => `<div class="lmstory"><h2>${esc(x.t)}</h2>${x.l.map(l => `<p>${esc(l.replace(/\{N\}/g, st.name))}</p>`).join("")}</div>`).join("");
+  $("lmWords").textContent = "Words practiced in these stories: " + WORDS.slice(from - 1, to).join(", ") + ".";
+}
+function showLmStories(k) {
+  const st = cur(); if (!st) return;
+  const reached = Math.max(Math.floor(Math.min(st.nextIdx, WORDS.length) / LANDMARK), k);
+  $("lmBlock").innerHTML = Array.from({ length: reached }, (_, i) => `<option value="${i + 1}">${i * LANDMARK + 1} to ${(i + 1) * LANDMARK}  (${esc(LANDMARKS[i][0])})</option>`).join("");
+  $("lmBlock").value = String(k); renderLm(k); show("lmstories");
+}
+$("lmBlock").onchange = () => renderLm(parseInt($("lmBlock").value, 10));
+$("lmBack").onclick = () => { renderStudent(); show("student"); };
+$("lmPrint").onclick = () => { try { window.print(); } catch (e) { $("lmWords").textContent = "Printing isn't available here."; } };
+$("lmBtn").onclick = () => {
+  const st = cur(); if (!st) return;
+  const reached = Math.floor(Math.min(st.nextIdx, WORDS.length) / LANDMARK);
+  if (!reached) { $("stuMsg").textContent = "Stories unlock when the student reaches the first landmark, at word 25."; return; }
+  showLmStories(reached);
+};
+$("celebStories").onclick = () => { $("celeb").hidden = true; showLmStories(lmTarget); };
 function printCertificate() {
   const st = cur(); if (!st) return;
   $("certName").textContent = st.name;

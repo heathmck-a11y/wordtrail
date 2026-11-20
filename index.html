@@ -21,6 +21,18 @@ h2{font-family:"Teachers",sans-serif;font-weight:800}
 .banner h1{font-family:"Fredoka","Teachers",sans-serif}
 .banner{position:relative;border-radius:24px;overflow:hidden;border:4px solid var(--ink);box-shadow:0 6px 0 var(--ink);margin-bottom:16px;background:#bfe3fa}
 .banner svg{display:block;width:100%;height:auto}
+.gcdir{border:2px solid #7a4f27;background:#fbf3df;border-radius:12px;padding:10px 14px;margin:0 0 12px;max-width:7.5in;font-size:1rem;line-height:1.35}
+.gcdir h2{margin:0 0 4px;font-size:1.2rem}.gcdir ol{margin:4px 0 0;padding-left:1.2em}.gcdir li{margin:2px 0}
+.gcgrid{display:grid;grid-template-columns:repeat(auto-fill,2.5in);gap:0;max-width:7.5in}
+.gcard{box-sizing:border-box;width:2.5in;height:1in;border:2px dashed #8a8f94;display:flex;align-items:center;justify-content:center;position:relative;text-align:center;overflow:hidden}
+.gcard .gw{font-family:"Teachers","Century Gothic","Trebuchet MS",sans-serif;font-weight:700;color:#2b2118;line-height:1;white-space:nowrap}
+.gcard .gn{position:absolute;left:6px;bottom:3px;font-size:7pt;color:#555}
+.gcard.r{background:#f9c9c9}.gcard.y{background:#fde39a}.gcard.g{background:#c9ecd5}
+.gcard.t{background:#f3e2bf;flex-direction:column;gap:2px}
+.gcard.t .gt{font-size:15pt;font-weight:800;color:#5b3a17;font-family:"Fredoka","Teachers",sans-serif}
+.gcard.t .gs{font-size:9pt;color:#5b3a17}.gcard.t .gi{font-size:17pt;line-height:1}
+.cog{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;padding:0;border:2px solid var(--ink);border-radius:50%;background:rgba(255,255,255,.85);color:var(--ink);font-size:17px;line-height:1;cursor:pointer}
+.cog:hover{background:#fff}
 .banner h1{position:absolute;left:0;right:0;top:2%;text-align:center;margin:0;font-size:clamp(2.2rem,9vw,3.6rem);color:#fff;letter-spacing:1px;
  text-shadow:0 4px 0 var(--wood),0 7px 14px rgba(0,0,0,.25)}
 .banner h1 span{display:inline-block}
@@ -41,6 +53,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:4px soli
 .btn.go{background:var(--accent);color:#fff;border-color:var(--ink)}
 .btn.small{padding:6px 12px;font-size:.9rem;box-shadow:0 3px 0 var(--ink)}
 .btn.warn{background:#fde8e8}
+.btn.yellow{background:#f6c445;color:var(--ink);border-color:var(--ink)}
+#gcBtn{font-size:1.05rem;padding:12px 22px;max-width:15em;line-height:1.2}
 .btn.big{font-size:1.5rem;padding:16px 40px;border-radius:18px;box-shadow:0 6px 0 var(--ink)}
 .btn.big:active{box-shadow:0 2px 0 var(--ink)}
 .btn.quiet{background:none;border:0;box-shadow:none;padding:4px 8px;font-weight:600;font-size:.88rem;color:var(--soft);text-decoration:underline}
@@ -128,7 +142,7 @@ body.printing-cert #cert{display:flex!important}
 .lmstory{background:#fff;border:3px solid var(--line);border-radius:18px;padding:14px 22px;margin:12px 0;font-size:clamp(1.4rem,4.5vw,2rem);line-height:1.5}
 .lmstory h2{font-size:.95rem;color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}
 .lmstory p{margin:0 0 .3em}
-@media print{.lmstory{border:0;border-bottom:1px dashed #999;border-radius:0;font-size:17pt;line-height:1.35;padding:8pt 0;margin:0;break-inside:avoid}.lmstory p{margin:0 0 .12em}#lmstories h1{font-size:22pt;margin:0}#lmstories .sub{margin:0 0 6pt;font-size:12pt}.lmstory h2{font-size:11pt;color:#555}.noprint{display:none!important}body{background:#fff!important}.wrap{padding:0}.ctxout{border:0;font-size:22pt;padding:0}.ctxout .lw{color:inherit!important;font-weight:inherit!important}}
+@media print{@page{margin:.5in}.gcard,.gcdir{-webkit-print-color-adjust:exact;print-color-adjust:exact}.lmstory{border:0;border-bottom:1px dashed #999;border-radius:0;font-size:17pt;line-height:1.35;padding:8pt 0;margin:0;break-inside:avoid}.lmstory p{margin:0 0 .12em}#lmstories h1{font-size:22pt;margin:0}#lmstories .sub{margin:0 0 6pt;font-size:12pt}.lmstory h2{font-size:11pt;color:#555}.noprint{display:none!important}body{background:#fff!important}.wrap{padding:0}.ctxout{border:0;font-size:22pt;padding:0}.ctxout .lw{color:inherit!important;font-weight:inherit!important}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -150,6 +164,7 @@ body.printing-cert #cert{display:flex!important}
       <g transform="translate(650 150)"><rect x="-3" y="0" width="6" height="66" fill="#7a4f27"/><path d="M3 2 L52 16 L3 32Z" fill="#e2483d"/></g>
       <g fill="#2f7d4f"><path d="M60 262 l18 -44 l18 44z"/><path d="M736 250 l16 -40 l16 40z"/><path d="M270 258 l14 -34 l14 34z"/></g>
     </svg>
+    <button class="cog" id="cogBtn" aria-label="Settings" title="Settings">⚙</button>
     <h1><span>W</span><span>o</span><span>r</span><span>d</span> <span>T</span><span>r</span><span>a</span><span>i</span><span>l</span></h1>
   </div>
   <p class="sub">The student reads each word. Words they know are checked off. Words they miss are taught right away and then practiced again and again, a little further apart each time.</p>
@@ -170,6 +185,7 @@ body.printing-cert #cert{display:flex!important}
       <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words. The Landmark stories link on the student page appears after the first landmark and lists only the blocks reached.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word that turned green after being learned is read cold once more after 7 practice days. If it is missed, it goes back to yellow and keeps its points. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
       <p><b>Points.</b> The trail counts points. Each word is worth 6 points. A word read right at the check earns all 6. A missed word earns 1 point when it is learned, 2 more when it is read right on the next practice day, and 3 more on the day after that, when it turns green. Finishing every word on the trail adds a 100 point bonus, so a 150 word trail is 1000 points. Points are never taken away. The word chart below the trail shows which words are known.</p>
+      <p><b>Practice limit.</b> When a student has 10 practicing (yellow) words, or the number set under the cog, new words stop being checked. The session reads every practicing word instead, and checking starts again when fewer are left.</p>
       <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Each trail is the first 150 words, worth 1000 points. Progress is saved in this browser on this device.</p>
     </details>
@@ -211,6 +227,7 @@ body.printing-cert #cert{display:flex!important}
     <div id="nextInfo" style="margin:12px 0"></div>
     <div class="row">
       <button class="btn go big" id="startBtn">Start</button>
+      <button class="btn big yellow" id="gcBtn">Print Game Cards for Home Practice</button>
       <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
     <div class="row" style="margin-top:14px;gap:6px">
@@ -265,6 +282,16 @@ body.printing-cert #cert{display:flex!important}
 
 </div>
 
+<!-- GAME CARDS -->
+<section id="gamecards" hidden>
+<div class="wrap" style="padding-top:0">
+  <div class="top noprint"><button class="btn small" id="gcBack">Back to student</button></div>
+  <h1 class="noprint">Game cards for home practice</h1>
+  <p class="sub noprint" id="gcNote"></p>
+  <div class="row noprint" style="margin-bottom:12px"><button class="btn go" id="gcPrint">Print</button><button class="btn small" id="gcAgain">New set of words</button></div>
+  <div id="gcSheet"></div>
+</div>
+</section>
 <!-- TEACHER INSIGHTS -->
 <section id="insights" hidden>
 <div class="wrap" style="padding-top:0">
@@ -329,6 +356,19 @@ body.printing-cert #cert{display:flex!important}
   <p id="certDate"></p>
   <div class="sig"><span>Teacher</span><span>Date</span></div>
 </div>
+<div class="modal" id="setModal" hidden>
+  <div class="mbox">
+    <div style="font-weight:800;font-size:1.3rem;margin-bottom:10px">Settings</div>
+    <p style="text-align:left;margin:0 0 6px"><label for="setReps"><b>Correct reads</b> needed to learn a missed word in a session</label></p>
+    <select id="setReps" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+    <p style="text-align:left;margin:14px 0 6px"><label for="setMiss"><b>Misses allowed</b> on a word before it is set aside for the next session</label></p>
+    <select id="setMiss" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
+    <p style="text-align:left;margin:14px 0 6px"><label for="setCap"><b>Practicing (yellow) words</b> before new words pause</label></p>
+    <select id="setCap" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option value="0">No limit</option><option>6</option><option>8</option><option>10</option><option>12</option><option>15</option><option>20</option></select>
+    <p class="status" style="text-align:left">The first two are 3 and the limit is 10 unless you change them. These settings are saved in this browser on this device and apply to every student.</p>
+    <div class="lenbtns"><button class="btn go" id="setSave">Save</button><button class="btn small" id="setCancel">Cancel</button></div>
+  </div>
+</div>
 <div class="modal" id="lenModal" hidden>
   <div class="mbox">
     <div style="font-weight:800;font-size:1.2rem;margin-bottom:6px">Note for the grown-up</div>
@@ -369,7 +409,7 @@ body.printing-cert #cert{display:flex!important}
 // ====================================================================
 const MIN_ANCHORS      = 2;  // known words needed before missed words can be practiced
 const GROUP_SIZE       = 3;  // missed words taught together, then practiced together
-const REP_DAY1         = 3;  // correct reads per new word, spread across rounds (day 1)
+let REP_DAY1           = 3;  // correct reads per new word, spread across rounds (day 1)
 const ROUND_MIN        = 4;  // fewest cards in a round, so a word is not read twice in a row
 const REP_MISS_GAP     = 2;  // cards before a missed word returns
 const RELEARN_NEED     = 2;  // correct reads for a yellow word missed at warm-up (later days)
@@ -381,7 +421,8 @@ const RECHECK_DAYS     = 7;  // practice days after a word turns green before it
 const RECHECK_MAX      = 3;  // green words rechecked at the start of a session
 const WARMUP_MAX       = 5;  // yellow words reviewed at the start of a session
 const PENDING_RUNS_MAX = 1;  // groups of earlier-missed words relearned at the start of a session
-const TARGET_MISS_LIMIT= 3;  // misses on the new word before it is set aside for next time
+let TARGET_MISS_LIMIT  = 3;
+let YELLOW_CAP         = 10; // practicing (yellow) words at which new-word checking pauses. 0 = no cap.  // misses on the new word before it is set aside for next time
 const DEFAULT_MINUTES  = 3;  // session length until the teacher picks another
 
 // Kearns high-frequency word list, words 1-300 (Texas Education Agency, 2021), same as High-Frequency Word Check
@@ -401,6 +442,14 @@ function load() {
   return mem || { students: [] };
 }
 let state = load();
+// Teacher settings (cog on the front page). Saved with the students in this browser.
+function applySettings() {
+  const t = state.settings || {};
+  REP_DAY1 = [1, 2, 3, 4, 5, 6].includes(t.reps) ? t.reps : 3;
+  TARGET_MISS_LIMIT = [1, 2, 3, 4, 5, 6].includes(t.missLimit) ? t.missLimit : 3;
+  YELLOW_CAP = [0, 6, 8, 10, 12, 15, 20].includes(t.yellowCap) ? t.yellowCap : 10;
+}
+applySettings();
 function save() { mem = state; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
 const $ = id => document.getElementById(id);
@@ -410,7 +459,7 @@ function esc(t) { const d = document.createElement("div"); d.textContent = t; re
 
 let curId = null, session = null;
 const cur = () => state.students.find(s => s.id === curId);
-function show(id) { for (const s of ["home", "student", "session", "summary", "context", "lmstories", "insights"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+function show(id) { for (const s of ["home", "student", "session", "summary", "context", "lmstories", "insights", "gamecards"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
 
 // Word entries: st.words[word] = { s: 'known'|'learning'|'pending', days, last, first }
 //   known    = read at the check, or learned and then read right on 2 more days (green)
@@ -715,7 +764,7 @@ function nextCard() {
   }
   if (!S.warmDone) {
     S.warmDone = true;
-    const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
+    const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, isCapped(st) ? 999 : WARMUP_MAX);   // over the cap, every practicing word gets a cold read
     const re = shuffle(Object.keys(st.words).filter(k => recheckDue(st, k))).slice(0, RECHECK_MAX);
     if (w.length || re.length) { S.queue = shuffle([...re.map(word => ({ word, role: "recheck" })), ...w.map(word => ({ word, role: "review" }))]); return nextCard(); }
   }
@@ -731,11 +780,14 @@ function nextCard() {
     const g = S.group; S.group = [];
     if (startRun(g)) return nextCard();
   }
+  if (isCapped(st)) { S.capped = true; return endSession(); }   // too many practicing words: no new words until some turn green
   if (st.nextIdx >= goalOf(st)) return endSession();
   S.checking = true;   // once new words are being checked, earlier-missed words wait for the next session
   S.cur = { word: WORDS[st.nextIdx], role: "check" };
   renderSession();
 }
+const yellowCount = st => Object.keys(st.words).filter(k => st.words[k].s === "learning").length;
+const isCapped = st => YELLOW_CAP > 0 && yellowCount(st) >= YELLOW_CAP;
 function recheckDue(st, k) {
   const e = st.words[k], n = (st.pdates || []).length;
   return e.s === "known" && e.knownAt != null && !e.rechecked && n - e.knownAt >= RECHECK_DAYS;
@@ -876,6 +928,7 @@ function endSession() {
     `<li><b>Points earned today:</b> ${pointsOf(st) - (S.startPts || 0)} (${pointsOf(st)} of ${totalPts(st)} on the trail)</li>` +
     `<li><b>Words checked:</b> ${S.checked} (${S.checkedYes} read, ${S.checkedNo} missed)</li>` +
     (S.timeUp ? "<li><b>Time limit reached.</b></li>" : "") +
+    (S.capped ? `<li><b>New words are paused.</b> ${yellowCount(st)} words are being practiced (the limit is ${YELLOW_CAP}). Checking new words starts again when fewer are left.</li>` : "") +
     li("Started learning today:", S.learned) + li("Now known:", S.mastered) + li("Rechecked after 7 days, still known:", S.rechecked) + li("Missed at the 7 day recheck, back to practicing:", S.recheckMissed) +
     (S.reviewed ? `<li><b>Warm-up words reviewed:</b> ${S.reviewed}</li>` : "") +
     li("Missed in warm-up, will be relearned:", S.reviewMissed) + li("Known words missed while practicing:", S.anchorMissed) +
@@ -1480,7 +1533,7 @@ function renderInsights() {
     const last = (st.pdates || []).length ? st.pdates[st.pdates.length - 1] : null, ago = last ? daysSince(last) : null;
     const flags = [];
     if (!c.known && !c.learning && !c.pending) flags.push("Has not started");
-    else { if (ago !== null && ago >= INS_STALE_DAYS) flags.push(`No session in ${ago} days`); if (c.pending >= INS_MISSED_FLAG) flags.push(`${c.pending} missed words waiting`); }
+    else { if (ago !== null && ago >= INS_STALE_DAYS) flags.push(`No session in ${ago} days`); if (c.pending >= INS_MISSED_FLAG) flags.push(`${c.pending} missed words waiting`); if (isCapped(st)) flags.push(`new words paused, ${c.learning} words practicing`); }
     return { st, c, pct, last, ago, flags };
   }).sort((a, b) => a.st.name.localeCompare(b.st.name));
   const attn = info.filter(i => i.flags.length);
@@ -1489,6 +1542,44 @@ function renderInsights() {
 }
 $("insBtn").onclick = () => { renderInsights(); show("insights"); };
 $("insBack").onclick = () => { renderHome(); show("home"); };
+// ---- Game cards for home practice: Trail Mix-Up ----
+const GC_COUNTS = { pending: 1, learning: 3, known: 6 };   // 1 red, 3 yellow, 6 green
+function gcPick(st) {
+  const by = { pending: [], learning: [], known: [] };
+  WORDS.slice(0, goalOf(st)).forEach(w => { const e = st.words[w]; if (e && by[e.s]) by[e.s].push(w); });
+  const out = [];
+  Object.keys(GC_COUNTS).forEach(k => shuffle(by[k]).slice(0, GC_COUNTS[k]).forEach(w => out.push({ w, k })));
+  // Fill any shortage with extra known, then practicing, words so the set reaches 10 when the student has enough.
+  const total = GC_COUNTS.pending + GC_COUNTS.learning + GC_COUNTS.known;
+  const used = new Set(out.map(o => o.w));
+  for (const k of ["known", "learning", "pending"]) shuffle(by[k]).forEach(w => { if (out.length < total && !used.has(w)) { used.add(w); out.push({ w, k }); } });
+  const order = { pending: 0, learning: 1, known: 2 };
+  return out.sort((a, b) => order[a.k] - order[b.k]);
+}
+function renderGameCards() {
+  const st = cur(); if (!st) return;
+  const picks = gcPick(st), cls = { pending: "r", learning: "y", known: "g" };
+  const fs = w => w.length <= 4 ? 30 : w.length <= 6 ? 26 : w.length <= 8 ? 21 : 17;
+  const word = o => `<div class="gcard ${cls[o.k]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gn">${esc(st.name)}</div></div>`;
+  const mix = ["🐿️", "🌧️", "🐻", "🥾"].map(e => `<div class="gcard t"><div class="gi">${e}</div><div class="gt">Trail Mix-Up!</div><div class="gs">Put your cards back.</div></div>`);
+  $("gcSheet").innerHTML = `<div class="gcdir"><h2>Trail Mix-Up: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Red, yellow and green cards are words. The brown cards are Trail Mix-Up cards.</div><ol>
+    <li>Shuffle the cards and put them face down in a pile.</li>
+    <li>Take turns. Draw a card and read the word.</li>
+    <li>Read it right? Put the card in your backpack (keep it).</li>
+    <li>Not yet? Say the word together and put the card at the bottom of the pile.</li>
+    <li>Draw a Trail Mix-Up card? Your backpack spills. Put all your cards back in the pile and shuffle.</li>
+    <li>Play until the cards run out or for 10 minutes. Count your backpack cards.</li></ol></div>
+    <div class="gcgrid">${picks.map(word).join("")}${mix.join("")}</div>`;
+  const n = picks.length;
+  $("gcNote").textContent = n ? `${st.name}: ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green word cards, plus 4 Trail Mix-Up cards.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
+}
+$("gcBtn").onclick = () => { renderGameCards(); show("gamecards"); };
+$("gcAgain").onclick = renderGameCards;
+$("gcBack").onclick = () => { renderStudent(); show("student"); };
+$("gcPrint").onclick = () => { try { window.print(); } catch (e) { $("gcNote").textContent = "Printing isn't available here."; } };
+$("cogBtn").onclick = () => { $("setReps").value = String(REP_DAY1); $("setMiss").value = String(TARGET_MISS_LIMIT); $("setCap").value = String(YELLOW_CAP); $("setModal").hidden = false; };
+$("setCancel").onclick = () => { $("setModal").hidden = true; };
+$("setSave").onclick = () => { state.settings = { reps: parseInt($("setReps").value, 10), missLimit: parseInt($("setMiss").value, 10), yellowCap: parseInt($("setCap").value, 10) }; applySettings(); save(); $("setModal").hidden = true; };
 $("ctxBack").onclick = () => { renderStudent(); show("student"); };
 $("ctxSent").onclick = () => { ctx.mode = "sent"; makeContext(false); };
 $("ctxStory").onclick = () => { ctx.mode = "story"; makeContext(false); };

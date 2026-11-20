@@ -27,6 +27,7 @@ h2{font-family:"Teachers",sans-serif;font-weight:800}
 .gcard{box-sizing:border-box;width:1.75in;height:.75in;border:1.5px solid #8a8f94;border-left-width:.14in;display:flex;align-items:center;justify-content:center;position:relative;text-align:center;overflow:hidden;background:#fff}
 .gcard .gw{font-family:"Teachers","Century Gothic","Trebuchet MS",sans-serif;font-weight:700;color:#2b2118;line-height:1;white-space:nowrap}
 .gcard .gn{position:absolute;left:5px;bottom:2px;font-size:6pt;color:#666}
+.gcard .gp{position:absolute;right:5px;top:3px;font-size:13pt;line-height:1}
 .gcard.t{background:#f3e2bf;flex-direction:column;gap:1px}
 .gcard.t .gt{font-size:14pt;font-weight:800;color:#5b3a17;font-family:"Fredoka","Teachers",sans-serif;line-height:1}
 .gcard.t .gs{font-size:6.5pt;color:#5b3a17}.gcard.t .gi{font-size:13pt;line-height:1}
@@ -1579,18 +1580,20 @@ function gcPick(st) {
   for (const k of ["known", "learning", "pending"]) shuffle(by[k]).forEach(w => { if (out.length < total && !used.has(w)) { used.add(w); out.push({ w, k }); } });
   return shuffle(out);
 }
-const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a LOST! card? You took a wrong turn. Put all your cards back in the pile and shuffle.|Place the LOST! card off to the side, not back in the center pile.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
+const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a lost! card? You took a wrong turn. Put all your cards back in the pile and shuffle.|Place the lost! card off to the side, not back in the center pile.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
+const GC_PICS = [["🎒", "hiking backpack"], ["🥾", "hiking boot"], ["🧭", "compass"], ["⛺", "tent"], ["🌲", "pine tree"], ["🗺️", "trail map"]];
 function renderGameCards() {
   const st = cur(); if (!st) return;
   const col = studentColor(st), picks = gcPick(st);
-  gcCurrent = { st, picks, color: col[1] };
+  const pi = (st.gcSet || 0) % GC_PICS.length, pic = GC_PICS[pi];
+  gcCurrent = { st, picks, color: col[1], pic: pic[0], pi };
   const fs = w => w.length <= 4 ? 22 : w.length <= 6 ? 19 : w.length <= 8 ? 15 : 12;
-  const word = o => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gn">${esc(st.name)}</div></div>`;
-  const lost = [0, 1, 2, 3].map(() => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:22pt">LOST!</div><div class="gn">${esc(st.name)}</div></div>`);
-  $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Most cards are words. Four cards say LOST!. The colored stripe shows whose set it is.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
+  const word = o => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`;
+  const lost = [0, 1, 2, 3].map(() => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:22pt">lost!</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`);
+  $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards. The picture on the cards is the same for the whole set, and a new set gets a new picture.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
     <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
-  $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say LOST!.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
+  $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
   $("gcLinkRow").hidden = true;
 }
 // Loads jsPDF only when a PDF is asked for, so the rest of the app never depends on the network.
@@ -1613,8 +1616,9 @@ function gcCanvas(kind, text, name, color, icon) {
   if (false) {
   } else {
     let px = 110; g.font = `700 ${px}px ${GC_FONT}`;
-    while (g.measureText(text).width > W - S - 50 && px > 30) { px -= 4; g.font = `700 ${px}px ${GC_FONT}`; }
+    while (g.measureText(text).width > W - S - 130 && px > 30) { px -= 4; g.font = `700 ${px}px ${GC_FONT}`; }
     g.fillStyle = "#2b2118"; g.fillText(text, cx, H / 2 - 4);
+    if (icon) { g.font = `44px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = "right"; g.textBaseline = "top"; g.fillText(icon, W - 12, 10); g.textBaseline = "middle"; g.textAlign = "center"; }
     g.font = `500 24px ${GC_FONT}`; g.fillStyle = "#666"; g.textAlign = "left"; g.fillText(name, S + 14, H - 20);
   }
   return c.toDataURL("image/jpeg", 0.92);
@@ -1628,7 +1632,7 @@ async function makeGamePdf() {
   // Directions box
   doc.setFillColor(251, 243, 223); doc.setDrawColor(122, 79, 39); doc.setLineWidth(0.02);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  const intro = doc.splitTextToSize("Play with 2 or more people. Cut the cards apart. Most cards are words. Four cards say LOST!. The colored stripe shows whose set it is.", 6.7);
+  const intro = doc.splitTextToSize("Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards. The picture on the cards is the same for the whole set, and a new set gets a new picture.", 6.7);
   const steps = GC_STEPS.map((t, i) => { const [a, b] = t.split("|"); doc.setFont("helvetica", "bold"); const bl = b ? doc.splitTextToSize(b, 6.6) : []; doc.setFont("helvetica", "normal"); return { n: doc.splitTextToSize(`${i + 1}. ${a}`, 6.6), b: bl }; });
   const lines = intro.length + steps.reduce((n, o) => n + o.n.length + o.b.length, 0), boxH = 0.45 + lines * 0.2 + steps.length * 0.04;
   doc.roundedRect(M, 0.6, 7, boxH, 0.1, 0.1, "FD");
@@ -1641,7 +1645,8 @@ async function makeGamePdf() {
     y += 0.04;
   });
   // Cards: word cards, then 4 LOST! cards
-  const cards = picks.map(o => gcCanvas("word", o.w, st.name, color)).concat([0, 1, 2, 3].map(() => gcCanvas("word", "LOST!", st.name, color)));
+  const cards = picks.map(o => gcCanvas("word", o.w, st.name, color, gcCurrent.pic)).concat([0, 1, 2, 3].map(() => gcCanvas("word", "lost!", st.name, color, gcCurrent.pic)));
+  st.gcSet = gcCurrent.pi + 1; save();
   const top = 0.6 + boxH + 0.3;
   cards.forEach((img, i) => doc.addImage(img, "JPEG", M + (i % 4) * CW, top + Math.floor(i / 4) * CH, CW, CH));
   return doc.output("bloburl");

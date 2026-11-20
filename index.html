@@ -829,7 +829,7 @@ function renderSession() {
   else { ph.textContent = "Learning a word"; ph.classList.add("learn");
     const R = S.run, ws = Object.keys(R.words), need = ws.length * REP_DAY1;
     const got = ws.reduce((n, w) => n + Math.min(R.words[w].ok, REP_DAY1), 0);
-    $("cardCount").textContent = `${got} of ${need} right so far`; $("barFill").style.width = (need ? got / need * 100 : 0) + "%";
+    $("cardCount").textContent = ""; $("barFill").style.width = (need ? got / need * 100 : 0) + "%";
     $("cardHint").textContent = c.role === "target" ? "The new word." : "A word the student knows."; }
   if (S.timeUp) $("cardHint").textContent = "Time is up. This is the last card.";
   $("undoBtn").disabled = !S.undo.length;

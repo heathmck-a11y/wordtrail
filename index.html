@@ -1587,10 +1587,10 @@ function renderGameCards() {
   const col = studentColor(st), picks = gcPick(st);
   const pi = (st.gcSet || 0) % GC_PICS.length, pic = GC_PICS[pi];
   gcCurrent = { st, picks, color: col[1], pic: pic[0], pi };
-  const fs = w => w.length <= 4 ? 22 : w.length <= 6 ? 19 : w.length <= 8 ? 15 : 12;
+  const fs = w => w.length <= 4 ? 27 : w.length <= 6 ? 23 : w.length <= 8 ? 19 : 15;
   const word = o => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`;
-  const lost = [0, 1, 2, 3].map(() => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:22pt">lost!</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`);
-  $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards. The picture on the cards is the same for the whole set, and a new set gets a new picture.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
+  const lost = [0, 1, 2, 3].map(() => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:27pt">lost!</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`);
+  $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
     <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
   $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
@@ -1615,7 +1615,7 @@ function gcCanvas(kind, text, name, color, icon) {
   g.textAlign = "center"; g.textBaseline = "middle";
   if (false) {
   } else {
-    let px = 110; g.font = `700 ${px}px ${GC_FONT}`;
+    let px = 135; g.font = `700 ${px}px ${GC_FONT}`;
     while (g.measureText(text).width > W - S - 130 && px > 30) { px -= 4; g.font = `700 ${px}px ${GC_FONT}`; }
     g.fillStyle = "#2b2118"; g.fillText(text, cx, H / 2 - 4);
     if (icon) { g.font = `44px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign = "right"; g.textBaseline = "top"; g.fillText(icon, W - 12, 10); g.textBaseline = "middle"; g.textAlign = "center"; }
@@ -1632,7 +1632,7 @@ async function makeGamePdf() {
   // Directions box
   doc.setFillColor(251, 243, 223); doc.setDrawColor(122, 79, 39); doc.setLineWidth(0.02);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-  const intro = doc.splitTextToSize("Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards. The picture on the cards is the same for the whole set, and a new set gets a new picture.", 6.7);
+  const intro = doc.splitTextToSize("Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards.", 6.7);
   const steps = GC_STEPS.map((t, i) => { const [a, b] = t.split("|"); doc.setFont("helvetica", "bold"); const bl = b ? doc.splitTextToSize(b, 6.6) : []; doc.setFont("helvetica", "normal"); return { n: doc.splitTextToSize(`${i + 1}. ${a}`, 6.6), b: bl }; });
   const lines = intro.length + steps.reduce((n, o) => n + o.n.length + o.b.length, 0), boxH = 0.45 + lines * 0.2 + steps.length * 0.04;
   doc.roundedRect(M, 0.6, 7, boxH, 0.1, 0.1, "FD");

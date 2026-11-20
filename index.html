@@ -52,7 +52,9 @@ input[type=text]{flex:1;min-width:160px}
 textarea{width:100%;min-height:110px}
 .stu{display:flex;align-items:center;gap:10px;background:var(--paper);border:3px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
 .stu:hover{border-color:var(--accent)}
-.stu .name{font-weight:700;font-size:1.15rem}
+.stu .name{font-weight:700;font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.stu .mini{flex:0 0 auto;width:72px;height:10px;background:#d4e4dc;border-radius:99px;overflow:hidden}
+.stu .mini i{display:block;height:100%;background:var(--accent);border-radius:99px}
 .stu .meta{color:var(--soft);font-size:.9rem}
 .stu .grow{flex:1}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
@@ -440,8 +442,8 @@ function renderHome() {
   state.students.forEach(st => {
     const c = counts(st);
     const row = document.createElement("div"); row.className = "stu";
-    row.innerHTML = `<div class="grow"><div class="name">${esc(st.name)}</div>
-      <div class="meta">${c.known} known · ${c.learning} practicing · ${c.pending} missed · ${pointsOf(st)} of ${totalPts(st)} points</div></div>`;
+    row.innerHTML = `<div class="grow"><div class="name">${esc(st.name)}<span class="mini" role="img" aria-label="Trail progress"><i style="width:${Math.min(100, Math.round(pointsOf(st) / totalPts(st) * 100))}%"></i></span></div>
+      <div class="meta">${c.known} known · ${c.learning} practicing · ${c.pending} missed</div></div>`;
     const del = document.createElement("button"); del.className = "btn small"; del.textContent = "Delete";
     del.onclick = e => {
       e.stopPropagation();
@@ -563,12 +565,12 @@ function renderStudent() {
   $("certBtn").hidden = pointsOf(st) < totalPts(st);
   $("wordsHead").textContent = `All ${goalOf(st)} words`;
   $("stuMsg").textContent = "";
-  // Word list in blocks of 100. The block with the next word to check starts open.
+  // Word list in blocks of 50. The block with the next word to check starts open.
   const tile = (w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}</span>`;
-  const goal = goalOf(st), openBlock = Math.min(Math.floor(st.nextIdx / 100), Math.ceil(goal / 100) - 1);
+  const goal = goalOf(st), openBlock = Math.min(Math.floor(st.nextIdx / 50), Math.ceil(goal / 50) - 1);
   let blocks = "";
-  for (let b = 0; b * 100 < goal; b++) {
-    const from = b * 100, to = Math.min(from + 100, goal), ws = WORDS.slice(from, to);
+  for (let b = 0; b * 50 < goal; b++) {
+    const from = b * 50, to = Math.min(from + 50, goal), ws = WORDS.slice(from, to);
     const known = ws.filter(w => st.words[w] && st.words[w].s === "known").length;
     blocks += `<details${b === openBlock ? " open" : ""} style="margin-bottom:8px"><summary>Words ${from + 1} to ${to} <span style="font-weight:400;color:var(--soft)">(${known} known)</span></summary><div class="grid">${ws.map((w, k) => tile(w, from + k)).join("")}</div></details>`;
   }

@@ -593,7 +593,7 @@ function fmt(ms) { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floo
 function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
 function tick() {
   const S = session; if (!S) { stopTimer(); return; }
-  const left = S.endAt - Date.now(), t = $("timer");
+  const left = S.modalSince ? S.endAt - S.modalSince : S.endAt - Date.now(), t = $("timer");   // the clock is held while a correction card is up
   if (left <= 0) {
     t.textContent = "Time's up"; t.classList.add("up");
     if (!S.timeUp) { S.timeUp = true; if (S.cur) renderSession(); }
@@ -610,11 +610,12 @@ document.querySelectorAll(".lenbtn").forEach(b => b.onclick = () => {
 // Pause: stops the timer and covers the card. Resume adds the paused time back so no practice time is lost.
 function pauseSession() {
   const S = session; if (!S || S.paused) return;
+  if (S.modalSince) { S.endAt += Date.now() - S.modalSince; S.modalSince = 0; }
   S.paused = true; S.pausedAt = Date.now(); stopTimer(); $("timer").textContent = "⏸ Paused"; $("pauseOv").hidden = false; $("resumeBtn").focus();
 }
 function resumeSession() {
   const S = session; if (!S || !S.paused) return;
-  S.endAt += Date.now() - S.pausedAt; S.paused = false; S.pausedAt = 0; $("pauseOv").hidden = true; startTimer();
+  S.endAt += Date.now() - S.pausedAt; S.paused = false; S.pausedAt = 0; if (S.modal) S.modalSince = Date.now(); $("pauseOv").hidden = true; startTimer();
 }
 $("pauseBtn").onclick = pauseSession; $("resumeBtn").onclick = resumeSession;
 $("pauseEnd").onclick = () => { $("pauseOv").hidden = true; if (session) session.paused = false; endSession(); };
@@ -700,6 +701,7 @@ function noRepeat(q, prev) {
 }
 function nextCard() {
   const S = session, st = cur();
+  if (S.modalSince) { S.endAt += Date.now() - S.modalSince; S.modalSince = 0; }   // time on the correction card does not count
   S.modal = null;
   if (!S.timeUp && !S.paused && Date.now() >= S.endAt) S.timeUp = true;
   // Time is up: stop after the card the student just had. A word still being practiced stays red and comes back next session.
@@ -840,6 +842,7 @@ function renderSession() {
   $("undoBtn").disabled = !S.undo.length;
   $("starLine").textContent = `${S.stars} points today`;
   const m = S.modal;
+  if (m && !S.modalSince && !S.paused) S.modalSince = Date.now();
   $("modal").hidden = !m;
   if (m) {
     $("modalTitle").textContent = m.title || "";

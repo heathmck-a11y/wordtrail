@@ -247,8 +247,8 @@ body.printing-cert #cert{display:flex!important}
   <div class="card"><div class="word" id="cardWord"></div></div>
   <div class="ctype" id="cardType"></div>
   <div class="count" id="cardCount"></div>
-  <div class="bar"><i id="barFill"></i></div>
-  <div class="starline" id="starLine"></div>
+  <div class="bar" id="cardBar"><i id="barFill"></i></div>
+  <div class="starline" id="starLine" hidden></div>
   <div class="answers">
     <button class="ans yes" id="yesBtn">Yes</button>
     <button class="ans no" id="noBtn">No</button>
@@ -823,14 +823,15 @@ function renderSession() {
   $("cardWord").textContent = c.word;
   { const w = st.words[c.word], t = c.role === "recheck" ? "long-term check" : c.role === "check" ? "assessing" : (c.role === "target" || c.role === "relearn" || (w && w.s === "learning")) ? "learning" : "known";
     $("cardType").textContent = "Card type: " + t; }
+  $("cardBar").hidden = false;
   const ph = $("phase"); ph.className = "badge";
   if (c.role === "check") { ph.textContent = "Checking"; $("cardCount").textContent = `Word ${st.nextIdx + 1} of ${goalOf(st)}`; $("barFill").style.width = (st.nextIdx / goalOf(st) * 100) + "%"; $("cardHint").textContent = "Can the student read this word?"; }
   else if (c.role === "review" || c.role === "recheck" || c.role === "relearn" || !S.run) { ph.textContent = c.role === "relearn" ? "Trying again" : "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = "Words practiced before"; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
   else { ph.textContent = "Learning a word"; ph.classList.add("learn");
     const R = S.run, ws = Object.keys(R.words), need = ws.length * REP_DAY1;
     const got = ws.reduce((n, w) => n + Math.min(R.words[w].ok, REP_DAY1), 0);
-    $("cardCount").textContent = ""; $("barFill").style.width = (need ? got / need * 100 : 0) + "%";
-    $("cardHint").textContent = c.role === "target" ? "The new word." : "A word the student knows."; }
+    $("cardCount").textContent = ""; $("cardBar").hidden = true; $("barFill").style.width = (need ? got / need * 100 : 0) + "%";
+    $("cardHint").textContent = ""; }
   if (S.timeUp) $("cardHint").textContent = "Time is up. This is the last card.";
   $("undoBtn").disabled = !S.undo.length;
   $("starLine").textContent = `${S.stars} points today`;

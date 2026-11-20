@@ -153,7 +153,7 @@ body.printing-cert #cert{display:flex!important}
   </div>
   <p class="sub">The student reads each word. Words they know are checked off. Words they miss are taught right away and then practiced again and again, a little further apart each time.</p>
   <div class="panel">
-    <h2>Students</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2 style="margin:0">Students</h2><button class="btn small quiet" id="insBtn">Teacher insights</button></div>
     <div class="row" style="margin-bottom:12px">
       <input type="text" id="newName" placeholder="Student name" maxlength="30" autocomplete="off">
       <button class="btn go" id="addBtn">Add student</button>
@@ -272,6 +272,17 @@ body.printing-cert #cert{display:flex!important}
 
 </div>
 
+<!-- TEACHER INSIGHTS -->
+<section id="insights" hidden>
+<div class="wrap" style="padding-top:0">
+  <div class="top"><button class="btn small" id="insBack">Back</button></div>
+  <h1>Teacher insights</h1>
+  <p class="sub" id="insNote"></p>
+  <div class="panel" id="insAttn"></div>
+  <div class="panel" id="insWords"></div>
+  <div class="panel" id="insStu"></div>
+</div>
+</section>
 <!-- LANDMARK STORIES -->
 <section id="lmstories" hidden>
 <div class="wrap" style="padding-top:0">
@@ -406,7 +417,7 @@ function esc(t) { const d = document.createElement("div"); d.textContent = t; re
 
 let curId = null, session = null;
 const cur = () => state.students.find(s => s.id === curId);
-function show(id) { for (const s of ["home", "student", "session", "summary", "context", "lmstories"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
+function show(id) { for (const s of ["home", "student", "session", "summary", "context", "lmstories", "insights"]) $(s).hidden = s !== id; window.scrollTo(0, 0); }
 
 // Word entries: st.words[word] = { s: 'known'|'learning'|'pending', days, last, first }
 //   known    = read at the check, or learned and then read right on 2 more days (green)
@@ -1451,6 +1462,43 @@ function makeContext(fresh) {
   $("ctxSent").setAttribute("aria-pressed", ctx.mode === "sent"); $("ctxStory").setAttribute("aria-pressed", ctx.mode === "story");
 }
 $("ctxBtn").onclick = () => { const st = cur(); if (!st) return; $("ctxName").textContent = st.name; ctx.mode = "sent"; show("context"); makeContext(true); };
+// ---- Teacher insights: a summary across the students saved in this browser ----
+const INS_STALE_DAYS = 7;   // days without a session before a student is flagged
+const INS_MISSED_FLAG = 3;  // missed words waiting before a student is flagged
+function daysSince(iso) { const a = new Date(iso + "T00:00:00"), b = new Date(today() + "T00:00:00"); return Math.round((b - a) / 86400000); }
+function renderInsights() {
+  const ss = state.students, goal = goalOf(null), list = WORDS.slice(0, goal);
+  $("insNote").textContent = ss.length ? `Based on the ${ss.length} student${ss.length === 1 ? "" : "s"} saved in this browser on this device.` : "No students yet.";
+  // Per word: how many students have checked it, missed it first, and still need to work on it.
+  const rows = list.map(w => {
+    let checked = 0, first = 0, need = 0;
+    ss.forEach(st => { const e = st.words[w]; if (!e) return; checked++; if (e.first === "no") first++; if (e.s === "pending" || e.s === "learning") need++; });
+    return { w, checked, first, need };
+  });
+  const pick = (key, minShare) => rows.filter(r => r[key] >= 2 && r[key] / r.checked >= minShare).sort((a, b) => b[key] - a[key] || b[key] / b.checked - a[key] / a.checked).slice(0, 12);
+  const chip = (r, key, cls) => `<span class="chip ${cls}">${esc(r.w)} · ${r[key]} of ${r.checked}</span>`;
+  const needL = pick("need", 0.5), firstL = pick("first", 0.5);
+  $("insWords").innerHTML = `<h2>Words to teach as a group</h2>` + (ss.length < 2
+    ? `<p class="status">This needs at least 2 students. Add another student to see words that several of them are working on.</p>`
+    : `<p style="margin:0 0 6px"><b>Still being worked on.</b> Words that are red or yellow for at least half the students who have checked them.</p>`
+      + (needL.length ? `<div class="chips">${needL.map(r => chip(r, "need", "a")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
+      + `<p style="margin:10px 0 6px"><b>Missed at the first check.</b> Words that at least half the students did not read the first time.</p>`
+      + (firstL.length ? `<div class="chips">${firstL.map(r => chip(r, "first", "r")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`));
+  // Per student
+  const info = ss.map(st => {
+    const c = counts(st), pts = pointsOf(st), pct = Math.round(pts / totalPts(st) * 100);
+    const last = (st.pdates || []).length ? st.pdates[st.pdates.length - 1] : null, ago = last ? daysSince(last) : null;
+    const flags = [];
+    if (!c.known && !c.learning && !c.pending) flags.push("Has not started");
+    else { if (ago !== null && ago >= INS_STALE_DAYS) flags.push(`No session in ${ago} days`); if (c.pending >= INS_MISSED_FLAG) flags.push(`${c.pending} missed words waiting`); }
+    return { st, c, pct, last, ago, flags };
+  }).sort((a, b) => a.st.name.localeCompare(b.st.name));
+  const attn = info.filter(i => i.flags.length);
+  $("insAttn").innerHTML = `<h2>Needs attention</h2>` + (attn.length ? `<ul class="sumlist">${attn.map(i => `<li><b>${esc(i.st.name)}:</b> ${i.flags.map(esc).join(", ")}</li>`).join("")}</ul>` : `<p class="status">Nothing to flag.</p>`);
+  $("insStu").innerHTML = `<h2>Each student</h2>` + (info.length ? `<ul class="sumlist">${info.map(i => `<li><b>${esc(i.st.name)}</b>: ${i.pct}% of the trail. ${i.c.known} known, ${i.c.learning} practicing, ${i.c.pending} missed.${i.last ? ` Last session ${i.ago === 0 ? "today" : i.ago === 1 ? "yesterday" : i.ago + " days ago"}.` : " No session date recorded."}</li>`).join("")}</ul>` : `<p class="status">No students yet.</p>`);
+}
+$("insBtn").onclick = () => { renderInsights(); show("insights"); };
+$("insBack").onclick = () => { renderHome(); show("home"); };
 $("ctxBack").onclick = () => { renderStudent(); show("student"); };
 $("ctxSent").onclick = () => { ctx.mode = "sent"; makeContext(false); };
 $("ctxStory").onclick = () => { ctx.mode = "story"; makeContext(false); };

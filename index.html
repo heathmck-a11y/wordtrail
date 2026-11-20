@@ -23,16 +23,16 @@ h2{font-family:"Teachers",sans-serif;font-weight:800}
 .banner svg{display:block;width:100%;height:auto}
 .gcdir{border:2px solid #7a4f27;background:#fbf3df;border-radius:12px;padding:10px 14px;margin:0 0 12px;max-width:7.5in;font-size:1rem;line-height:1.35}
 .gcdir h2{margin:0 0 4px;font-size:1.2rem}.gcdir ol{margin:4px 0 0;padding-left:1.2em}.gcdir li{margin:2px 0}
-.gcgrid{display:grid;grid-template-columns:repeat(auto-fill,2.5in);gap:0;max-width:7.5in}
-.gcard{box-sizing:border-box;width:2.5in;height:1in;border:2px dashed #8a8f94;display:flex;align-items:center;justify-content:center;position:relative;text-align:center;overflow:hidden}
+.gcgrid{display:grid;grid-template-columns:repeat(auto-fill,1.75in);gap:0;max-width:7in}
+.gcard{box-sizing:border-box;width:1.75in;height:.75in;border:1.5px solid #8a8f94;border-left-width:.14in;display:flex;align-items:center;justify-content:center;position:relative;text-align:center;overflow:hidden;background:#fff}
 .gcard .gw{font-family:"Teachers","Century Gothic","Trebuchet MS",sans-serif;font-weight:700;color:#2b2118;line-height:1;white-space:nowrap}
-.gcard .gn{position:absolute;left:6px;bottom:3px;font-size:7pt;color:#555}
-.gcard.r{background:#f9c9c9}.gcard.y{background:#fde39a}.gcard.g{background:#c9ecd5}
-.gcard.t{background:#f3e2bf;flex-direction:column;gap:2px}
-.gcard.t .gt{font-size:15pt;font-weight:800;color:#5b3a17;font-family:"Fredoka","Teachers",sans-serif}
-.gcard.t .gs{font-size:9pt;color:#5b3a17}.gcard.t .gi{font-size:17pt;line-height:1}
+.gcard .gn{position:absolute;left:5px;bottom:2px;font-size:6pt;color:#666}
+.gcard.t{background:#f3e2bf;flex-direction:column;gap:1px}
+.gcard.t .gt{font-size:14pt;font-weight:800;color:#5b3a17;font-family:"Fredoka","Teachers",sans-serif;line-height:1}
+.gcard.t .gs{font-size:6.5pt;color:#5b3a17}.gcard.t .gi{font-size:13pt;line-height:1}
 .cog{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;padding:0;border:2px solid var(--ink);border-radius:50%;background:rgba(255,255,255,.85);color:var(--ink);font-size:17px;line-height:1;cursor:pointer}
 .cog:hover{background:#fff}
+.cog.info{right:44px;font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:17px}
 .banner h1{position:absolute;left:0;right:0;top:2%;text-align:center;margin:0;font-size:clamp(2.2rem,9vw,3.6rem);color:#fff;letter-spacing:1px;
  text-shadow:0 4px 0 var(--wood),0 7px 14px rgba(0,0,0,.25)}
 .banner h1 span{display:inline-block}
@@ -164,6 +164,7 @@ body.printing-cert #cert{display:flex!important}
       <g transform="translate(650 150)"><rect x="-3" y="0" width="6" height="66" fill="#7a4f27"/><path d="M3 2 L52 16 L3 32Z" fill="#e2483d"/></g>
       <g fill="#2f7d4f"><path d="M60 262 l18 -44 l18 44z"/><path d="M736 250 l16 -40 l16 40z"/><path d="M270 258 l14 -34 l14 34z"/></g>
     </svg>
+    <button class="cog info" id="infoBtn" aria-label="About Word Trail" title="About Word Trail">i</button>
     <button class="cog" id="cogBtn" aria-label="Settings" title="Settings">⚙</button>
     <h1><span>W</span><span>o</span><span>r</span><span>d</span> <span>T</span><span>r</span><span>a</span><span>i</span><span>l</span></h1>
   </div>
@@ -227,7 +228,7 @@ body.printing-cert #cert{display:flex!important}
     <div id="nextInfo" style="margin:12px 0"></div>
     <div class="row">
       <button class="btn go big" id="startBtn">Start</button>
-      <button class="btn big yellow" id="gcBtn">Print Game Cards for Home Practice</button>
+      <button class="btn big yellow" id="gcBtn">Print Game Cards</button>
       <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
     <div class="row" style="margin-top:14px;gap:6px">
@@ -288,7 +289,8 @@ body.printing-cert #cert{display:flex!important}
   <div class="top noprint"><button class="btn small" id="gcBack">Back to student</button></div>
   <h1 class="noprint">Game cards for home practice</h1>
   <p class="sub noprint" id="gcNote"></p>
-  <div class="row noprint" style="margin-bottom:12px"><button class="btn go" id="gcPrint">Print</button><button class="btn small" id="gcAgain">New set of words</button></div>
+  <div class="row noprint" style="margin-bottom:12px"><button class="btn go" id="gcPrint">Open PDF to print</button><button class="btn small" id="gcAgain">New set of words</button></div>
+  <p class="status noprint" id="gcLinkRow" hidden><a id="gcLink" href="#" target="_blank" rel="noopener">Tap here if the PDF did not open</a></p>
   <div id="gcSheet"></div>
 </div>
 </section>
@@ -356,6 +358,13 @@ body.printing-cert #cert{display:flex!important}
   <p id="certDate"></p>
   <div class="sig"><span>Teacher</span><span>Date</span></div>
 </div>
+<div class="modal" id="infoModal" hidden>
+  <div class="mbox" style="text-align:left">
+    <div style="font-weight:800;font-size:1.3rem;margin-bottom:8px;text-align:center">About Word Trail</div>
+    <div id="infoBody" style="font-size:.95rem;line-height:1.45"></div>
+    <div class="lenbtns"><button class="btn go" id="infoClose">Close</button></div>
+  </div>
+</div>
 <div class="modal" id="setModal" hidden>
   <div class="mbox">
     <div style="font-weight:800;font-size:1.3rem;margin-bottom:10px">Settings</div>
@@ -365,7 +374,10 @@ body.printing-cert #cert{display:flex!important}
     <select id="setMiss" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
     <p style="text-align:left;margin:14px 0 6px"><label for="setCap"><b>Practicing (yellow) words</b> before new words pause</label></p>
     <select id="setCap" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option value="0">No limit</option><option>6</option><option>8</option><option>10</option><option>12</option><option>15</option><option>20</option></select>
-    <p class="status" style="text-align:left">The first two are 3 and the limit is 10 unless you change them. These settings are saved in this browser on this device and apply to every student.</p>
+    <p style="text-align:left;margin:14px 0 6px"><label for="setWarm"><b>Yellow words read</b> at the start of each session</label></p>
+    <select id="setWarm" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option value="0">All of them</option><option>3</option><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option></select>
+    <p class="status" style="text-align:left">When new words are paused, every yellow word is read. Otherwise this limit applies.</p>
+    <p class="status" style="text-align:left">The first two are 3, the pause limit is 10 and the yellow words read is 5 unless you change them. These settings are saved in this browser on this device and apply to every student.</p>
     <div class="lenbtns"><button class="btn go" id="setSave">Save</button><button class="btn small" id="setCancel">Cancel</button></div>
   </div>
 </div>
@@ -419,7 +431,7 @@ const WORD_PTS         = 6;  // points a word is worth. Learned 1, next practice
 const TRAIL_BONUS      = 100; // bonus for finishing every word. 150 words x 6 + 100 = 1000 points.
 const RECHECK_DAYS     = 7;  // practice days after a word turns green before it is checked once more
 const RECHECK_MAX      = 3;  // green words rechecked at the start of a session
-const WARMUP_MAX       = 5;  // yellow words reviewed at the start of a session
+let WARMUP_MAX         = 5;  // yellow words read at the start of a session. 0 = all of them.
 const PENDING_RUNS_MAX = 1;  // groups of earlier-missed words relearned at the start of a session
 let TARGET_MISS_LIMIT  = 3;
 let YELLOW_CAP         = 10; // practicing (yellow) words at which new-word checking pauses. 0 = no cap.  // misses on the new word before it is set aside for next time
@@ -448,6 +460,7 @@ function applySettings() {
   REP_DAY1 = [1, 2, 3, 4, 5, 6].includes(t.reps) ? t.reps : 3;
   TARGET_MISS_LIMIT = [1, 2, 3, 4, 5, 6].includes(t.missLimit) ? t.missLimit : 3;
   YELLOW_CAP = [0, 6, 8, 10, 12, 15, 20].includes(t.yellowCap) ? t.yellowCap : 10;
+  WARMUP_MAX = [0, 3, 5, 8, 10, 15, 20].includes(t.warmup) ? t.warmup : 5;
 }
 applySettings();
 function save() { mem = state; try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -764,7 +777,7 @@ function nextCard() {
   }
   if (!S.warmDone) {
     S.warmDone = true;
-    const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, isCapped(st) ? 999 : WARMUP_MAX);   // over the cap, every practicing word gets a cold read
+    const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, isCapped(st) || !WARMUP_MAX ? 999 : WARMUP_MAX);   // over the cap, every practicing word gets a cold read
     const re = shuffle(Object.keys(st.words).filter(k => recheckDue(st, k))).slice(0, RECHECK_MAX);
     if (w.length || re.length) { S.queue = shuffle([...re.map(word => ({ word, role: "recheck" })), ...w.map(word => ({ word, role: "review" }))]); return nextCard(); }
   }
@@ -1542,8 +1555,19 @@ function renderInsights() {
 }
 $("insBtn").onclick = () => { renderInsights(); show("insights"); };
 $("insBack").onclick = () => { renderHome(); show("home"); };
-// ---- Game cards for home practice: Trail Mix-Up ----
-const GC_COUNTS = { pending: 1, learning: 3, known: 6 };   // 1 red, 3 yellow, 6 green
+// ---- Game cards for home practice: LOST! ----
+const GC_COUNTS = { pending: 1, learning: 3, known: 6 };   // 1 red, 3 yellow, 6 green word cards
+const GC_COLORS = [["blue", "#2b7bd6"], ["purple", "#7b4bc0"], ["orange", "#e8832a"], ["teal", "#1f9d9d"], ["pink", "#d9569a"], ["brown", "#8a5a2b"], ["navy", "#2c3e7a"], ["gray", "#6b7a8a"]];
+// Each student gets one stripe color and keeps it. The first color no other student is using.
+function studentColor(st) {
+  if (!st.color || !GC_COLORS.some(c => c[1] === st.color)) {
+    const used = new Set(state.students.filter(o => o !== st).map(o => o.color));
+    const free = GC_COLORS.find(c => !used.has(c[1])) || GC_COLORS[state.students.indexOf(st) % GC_COLORS.length];
+    st.color = free[1]; save();
+  }
+  return GC_COLORS.find(c => c[1] === st.color);
+}
+let gcCurrent = null;
 function gcPick(st) {
   const by = { pending: [], learning: [], known: [] };
   WORDS.slice(0, goalOf(st)).forEach(w => { const e = st.words[w]; if (e && by[e.s]) by[e.s].push(w); });
@@ -1553,33 +1577,97 @@ function gcPick(st) {
   const total = GC_COUNTS.pending + GC_COUNTS.learning + GC_COUNTS.known;
   const used = new Set(out.map(o => o.w));
   for (const k of ["known", "learning", "pending"]) shuffle(by[k]).forEach(w => { if (out.length < total && !used.has(w)) { used.add(w); out.push({ w, k }); } });
-  const order = { pending: 0, learning: 1, known: 2 };
-  return out.sort((a, b) => order[a.k] - order[b.k]);
+  return shuffle(out);
 }
+const GC_ICONS = ["🧭", "🗺️", "🌲", "🥾"];
+const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a LOST! card? You took a wrong turn. Put all your cards back in the pile and shuffle.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
 function renderGameCards() {
   const st = cur(); if (!st) return;
-  const picks = gcPick(st), cls = { pending: "r", learning: "y", known: "g" };
-  const fs = w => w.length <= 4 ? 30 : w.length <= 6 ? 26 : w.length <= 8 ? 21 : 17;
-  const word = o => `<div class="gcard ${cls[o.k]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gn">${esc(st.name)}</div></div>`;
-  const mix = ["🐿️", "🌧️", "🐻", "🥾"].map(e => `<div class="gcard t"><div class="gi">${e}</div><div class="gt">Trail Mix-Up!</div><div class="gs">Put your cards back.</div></div>`);
-  $("gcSheet").innerHTML = `<div class="gcdir"><h2>Trail Mix-Up: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Red, yellow and green cards are words. The brown cards are Trail Mix-Up cards.</div><ol>
-    <li>Shuffle the cards and put them face down in a pile.</li>
-    <li>Take turns. Draw a card and read the word.</li>
-    <li>Read it right? Put the card in your backpack (keep it).</li>
-    <li>Not yet? Say the word together and put the card at the bottom of the pile.</li>
-    <li>Draw a Trail Mix-Up card? Your backpack spills. Put all your cards back in the pile and shuffle.</li>
-    <li>Play until the cards run out or for 10 minutes. Count your backpack cards.</li></ol></div>
-    <div class="gcgrid">${picks.map(word).join("")}${mix.join("")}</div>`;
+  const col = studentColor(st), picks = gcPick(st);
+  gcCurrent = { st, picks, color: col[1] };
+  const fs = w => w.length <= 4 ? 22 : w.length <= 6 ? 19 : w.length <= 8 ? 15 : 12;
+  const word = o => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gn">${esc(st.name)}</div></div>`;
+  const lost = GC_ICONS.map(e => `<div class="gcard t" style="border-left-color:${col[1]}"><div class="gi">${e}</div><div class="gt">LOST!</div><div class="gs">Put your cards back.</div></div>`);
+  $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Most cards are words. The brown cards are LOST! cards. The colored stripe shows whose set it is.</div><ol>${GC_STEPS.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>
+    <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
-  $("gcNote").textContent = n ? `${st.name}: ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green word cards, plus 4 Trail Mix-Up cards.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
+  $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 LOST! cards.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
+  $("gcLinkRow").hidden = true;
+}
+// Loads jsPDF only when a PDF is asked for, so the rest of the app never depends on the network.
+function loadJsPdf() {
+  if (window.jspdf) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const t = document.createElement("script"); t.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    t.onload = res; t.onerror = () => rej(new Error("jsPDF did not load")); document.head.appendChild(t);
+  });
+}
+const GC_FONT = '"Teachers","Century Gothic","Trebuchet MS",sans-serif', GC_FONT2 = '"Fredoka","Teachers","Trebuchet MS",sans-serif';
+// One card drawn on a canvas (300 dpi), so the PDF uses the same font and pictures as the app.
+function gcCanvas(kind, text, name, color, icon) {
+  const W = 525, H = 225, S = 42, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"), cx = S + (W - S) / 2;
+  g.fillStyle = kind === "lost" ? "#f3e2bf" : "#ffffff"; g.fillRect(0, 0, W, H);
+  g.fillStyle = color; g.fillRect(0, 0, S, H);
+  g.strokeStyle = "#8a8f94"; g.lineWidth = 3; g.strokeRect(1.5, 1.5, W - 3, H - 3);
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (kind === "lost") {
+    g.font = "46px sans-serif"; g.fillStyle = "#5b3a17"; g.fillText(icon, cx, 62);
+    g.font = `800 66px ${GC_FONT2}`; g.fillText("LOST!", cx, 130);
+    g.font = `500 27px ${GC_FONT}`; g.fillText("Put your cards back.", cx, 188);
+  } else {
+    let px = 110; g.font = `700 ${px}px ${GC_FONT}`;
+    while (g.measureText(text).width > W - S - 50 && px > 30) { px -= 4; g.font = `700 ${px}px ${GC_FONT}`; }
+    g.fillStyle = "#2b2118"; g.fillText(text, cx, H / 2 - 4);
+    g.font = `500 24px ${GC_FONT}`; g.fillStyle = "#666"; g.textAlign = "left"; g.fillText(name, S + 14, H - 20);
+  }
+  return c.toDataURL("image/jpeg", 0.92);
+}
+async function makeGamePdf() {
+  const { st, picks, color } = gcCurrent;
+  await loadJsPdf();
+  try { await Promise.all(["700 40px Teachers", "800 40px Fredoka", "500 24px Teachers"].map(f => document.fonts.load(f))); } catch (e) {}
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "in", format: "letter" });
+  const M = 0.75, CW = 1.75, CH = 0.75;
+  // Directions box
+  doc.setFillColor(251, 243, 223); doc.setDrawColor(122, 79, 39); doc.setLineWidth(0.02);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+  const intro = doc.splitTextToSize("Play with 2 or more people. Cut the cards apart. Most cards are words. The brown cards are LOST! cards. The colored stripe shows whose set it is.", 6.7);
+  const steps = GC_STEPS.map((t, i) => doc.splitTextToSize(`${i + 1}. ${t}`, 6.6));
+  const lines = intro.length + steps.reduce((n, a) => n + a.length, 0), boxH = 0.45 + lines * 0.2 + steps.length * 0.04;
+  doc.roundedRect(M, 0.6, 7, boxH, 0.1, 0.1, "FD");
+  doc.setTextColor(43, 33, 24); doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("LOST!: a card game for home", M + 0.15, 0.9);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+  let y = 1.12; doc.text(intro, M + 0.15, y); y += intro.length * 0.2 + 0.06;
+  steps.forEach(a => { doc.text(a, M + 0.2, y); y += a.length * 0.2 + 0.04; });
+  // Cards: word cards, then 4 LOST! cards
+  const cards = picks.map(o => gcCanvas("word", o.w, st.name, color)).concat(GC_ICONS.map(i => gcCanvas("lost", "", st.name, color, i)));
+  const top = 0.6 + boxH + 0.3;
+  cards.forEach((img, i) => doc.addImage(img, "JPEG", M + (i % 4) * CW, top + Math.floor(i / 4) * CH, CW, CH));
+  return doc.output("bloburl");
+}
+async function openGamePdf() {
+  if (!gcCurrent || !gcCurrent.picks.length) return;
+  const win = window.open("", "_blank");   // opened now, from the tap, so the browser allows it
+  $("gcPrint").disabled = true; $("gcPrint").textContent = "Making PDF...";
+  try {
+    const url = await makeGamePdf();
+    $("gcLink").href = url; $("gcLinkRow").hidden = false;
+    if (win) win.location.href = url;
+  } catch (e) {
+    if (win) win.close();
+    $("gcNote").textContent = "The PDF could not be made here, so the cards will print from this page instead.";
+    try { window.print(); } catch (e2) {}
+  }
+  $("gcPrint").disabled = false; $("gcPrint").textContent = "Open PDF to print";
 }
 $("gcBtn").onclick = () => { renderGameCards(); show("gamecards"); };
 $("gcAgain").onclick = renderGameCards;
 $("gcBack").onclick = () => { renderStudent(); show("student"); };
-$("gcPrint").onclick = () => { try { window.print(); } catch (e) { $("gcNote").textContent = "Printing isn't available here."; } };
-$("cogBtn").onclick = () => { $("setReps").value = String(REP_DAY1); $("setMiss").value = String(TARGET_MISS_LIMIT); $("setCap").value = String(YELLOW_CAP); $("setModal").hidden = false; };
+$("gcPrint").onclick = openGamePdf;
+$("cogBtn").onclick = () => { $("setReps").value = String(REP_DAY1); $("setMiss").value = String(TARGET_MISS_LIMIT); $("setCap").value = String(YELLOW_CAP); $("setWarm").value = String(WARMUP_MAX); $("setModal").hidden = false; };
 $("setCancel").onclick = () => { $("setModal").hidden = true; };
-$("setSave").onclick = () => { state.settings = { reps: parseInt($("setReps").value, 10), missLimit: parseInt($("setMiss").value, 10), yellowCap: parseInt($("setCap").value, 10) }; applySettings(); save(); $("setModal").hidden = true; };
+$("setSave").onclick = () => { state.settings = { reps: parseInt($("setReps").value, 10), missLimit: parseInt($("setMiss").value, 10), yellowCap: parseInt($("setCap").value, 10), warmup: parseInt($("setWarm").value, 10) }; applySettings(); save(); $("setModal").hidden = true; };
 $("ctxBack").onclick = () => { renderStudent(); show("student"); };
 $("ctxSent").onclick = () => { ctx.mode = "sent"; makeContext(false); };
 $("ctxStory").onclick = () => { ctx.mode = "story"; makeContext(false); };

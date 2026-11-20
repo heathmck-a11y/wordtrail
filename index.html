@@ -91,6 +91,7 @@ textarea{width:100%;min-height:110px}
 .qr #qrBox{background:#fff;padding:8px;border:3px solid var(--line);border-radius:12px;line-height:0}
 .qr .url{font-size:.9rem;color:var(--soft);word-break:break-all}
 .mbox p{margin:6px 0 16px}
+#modalWord{white-space:nowrap}
 .snd{display:inline-block;border-bottom:7px solid var(--accent);margin:0 .03em;padding:0 0 .04em;line-height:1.05}
 .mbox .say{display:block;color:var(--soft);font-size:.85rem;margin:4px 0}
 .mbox .script{display:block;font-size:.95rem;line-height:1.4;margin:4px 0 8px}
@@ -163,8 +164,8 @@ body.printing-cert #cert{display:flex!important}
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" (Under More options on the student page you can switch this to "Spell [word]. What word?" instead.) Missed words are taught one at a time. When 3 have been missed (or the check ends), they are practiced together in shuffled rounds, with known words added when there are too few cards. A missed word is taught again and comes back after 2 cards. Each word needs 3 correct reads in the rounds, then it is done for today.</p>
+      <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words. The Landmark stories link on the student page appears after the first landmark and lists only the blocks reached.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word that turned green after being learned is read cold once more after 7 practice days. If it is missed, it goes back to yellow and keeps its points. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
-      <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words, such as words 1 to 25 at the first landmark. You can print them again later from the student page.</p>
       <p><b>Points.</b> The trail counts points. Each word is worth 6 points. A word read right at the check earns all 6. A missed word earns 1 point when it is learned, 2 more when it is read right on the next practice day, and 3 more on the day after that, when it turns green. Finishing every word on the trail adds a 100 point bonus, so a 150 word trail is 1000 points. Points are never taken away. The word chart below the trail shows which words are known.</p>
       <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Each trail is the first 150 words, worth 1000 points. Progress is saved in this browser on this device.</p>
@@ -210,8 +211,8 @@ body.printing-cert #cert{display:flex!important}
       <button class="btn" id="certBtn" hidden>Print certificate</button>
     </div>
     <div class="row" style="margin-top:14px;gap:6px">
-      <button class="btn quiet" id="ctxBtn">Practice learned words in context</button>
-      <button class="btn quiet" id="lmBtn">Landmark stories</button>
+      <button class="btn quiet" id="ctxBtn" hidden>Practice learned words in context</button>
+      <button class="btn quiet" id="lmBtn" hidden>Landmark stories</button>
     </div>
     <details style="margin-top:12px">
       <summary style="font-weight:600;font-size:.88rem;color:var(--soft)">More options</summary>
@@ -552,6 +553,7 @@ function renderStudent() {
   const c = counts(st);
   $("stuName").textContent = st.name; $("nameForm").hidden = true;
   $("stuChips").innerHTML = `<span class="chip g">${c.known} known</span><span class="chip a">${c.learning} practicing</span><span class="chip r">${c.pending} missed</span><span class="chip n">${c.unchecked} not checked</span><span class="chip a">${pointsOf(st)} of ${totalPts(st)} points</span>`;
+  $("lmBtn").hidden = !landmarksReached(st);
   const next = st.nextIdx < goalOf(st) ? `Next word to check: <b>#${st.nextIdx + 1}</b>` : "Every word has been checked.";
   const due = Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today()).length;
   $("nextInfo").innerHTML = next + (due ? ` · ${due} practicing word${due === 1 ? "" : "s"} to review today` : "") + (c.pending ? ` · ${c.pending} missed word${c.pending === 1 ? "" : "s"} to learn` : "");
@@ -562,7 +564,7 @@ function renderStudent() {
   $("wordsHead").textContent = `All ${goalOf(st)} words`;
   $("stuMsg").textContent = "";
   // Word list in blocks of 100. The block with the next word to check starts open.
-  const tile = (w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}${st.words[w] && st.words[w].s === "learning" ? `<span class="st">${"★".repeat(st.words[w].days)}${"☆".repeat(DAYS_TO_KNOWN - st.words[w].days)}</span>` : ""}</span>`;
+  const tile = (w, i) => `<span class="w ${st.words[w] ? st.words[w].s : ""}" title="#${i + 1}">${esc(w)}</span>`;
   const goal = goalOf(st), openBlock = Math.min(Math.floor(st.nextIdx / 100), Math.ceil(goal / 100) - 1);
   let blocks = "";
   for (let b = 0; b * 100 < goal; b++) {
@@ -823,10 +825,10 @@ function renderSession() {
   $("cardWord").textContent = c.word;
   { const w = st.words[c.word], t = c.role === "recheck" ? "long-term check" : c.role === "check" ? "assessing" : (c.role === "target" || c.role === "relearn" || (w && w.s === "learning")) ? "learning" : "known";
     $("cardType").textContent = "Card type: " + t; }
-  $("cardBar").hidden = false;
+  $("cardBar").hidden = true;
   const ph = $("phase"); ph.className = "badge";
-  if (c.role === "check") { ph.textContent = "Checking"; $("cardCount").textContent = `Word ${st.nextIdx + 1} of ${goalOf(st)}`; $("barFill").style.width = (st.nextIdx / goalOf(st) * 100) + "%"; $("cardHint").textContent = "Can the student read this word?"; }
-  else if (c.role === "review" || c.role === "recheck" || c.role === "relearn" || !S.run) { ph.textContent = c.role === "relearn" ? "Trying again" : "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = "Words practiced before"; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
+  if (c.role === "check") { ph.textContent = "Checking"; $("cardCount").textContent = ""; $("barFill").style.width = (st.nextIdx / goalOf(st) * 100) + "%"; $("cardHint").textContent = "Can the student read this word?"; }
+  else if (c.role === "review" || c.role === "recheck" || c.role === "relearn" || !S.run) { ph.textContent = c.role === "relearn" ? "Trying again" : "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = ""; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
   else { ph.textContent = "Learning a word"; ph.classList.add("learn");
     const R = S.run, ws = Object.keys(R.words), need = ws.length * REP_DAY1;
     const got = ws.reduce((n, w) => n + Math.min(R.words[w].ok, REP_DAY1), 0);
@@ -842,7 +844,7 @@ function renderSession() {
     const spell = st.feedback === "spell";
     $("modalWord").innerHTML = spell ? esc(m.word) : sounds(m.word).map(g => `<span class="snd">${esc(g)}</span>`).join("");
     { const n = m.word.length, rem = n <= 3 ? 11 : n <= 5 ? 9 : n <= 7 ? 7 : n <= 9 ? 5.5 : 4.2;
-      $("modalWord").style.fontSize = `min(${rem}rem, ${Math.max(10, Math.floor(80 / (n * 0.6)))}vw)`; }
+      $("modalWord").style.fontSize = `min(${rem}rem, ${Math.max(6, Math.floor(66 / (n * 0.68)))}vw)`; }
     // Correction script the grown-up reads aloud
     const w = m.word;
     $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. <i style="color:var(--soft)">[pause]</i> ${spell ? `Spell <b>${esc(w)}</b>.` : `What are the sounds in <b>${esc(w)}</b>?`} What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
@@ -1493,6 +1495,8 @@ $("celebOk").onclick = () => { $("celeb").hidden = true; };
 // Stories for each 25-word block, shown when a landmark is reached. Each story uses only words from that block, earlier words, and simple sound-it-out words.
 const LM_STORIES = {"1": [{"t": "The Cat", "l": ["I have a cat.", "The cat was in a bag.", "That is not a bag for a cat!", "It is at the mat with you."]}, {"t": "Dan and the Dog", "l": ["Dan and a dog ran from a hill to the pond.", "The dog is big.", "Dan is not as big as the dog.", "He sat on a log.", "The dog sat on a rock."]}, {"t": "Are You a Cat?", "l": ["Are you a cat or a dog?", "You are not a cat.", "You are not a dog.", "You can be a pup!", "This is a bag of ham for you."]}], "2": [{"t": "Tim and His Pup", "l": ["Tim had a pup.", "His pup can run and hop.", "It will dig in the mud.", "When the pup is in the mud, Tim is mad.", "But Tim is glad about his pup."]}, {"t": "What Is in the Bag?", "l": ["What is in the bag?", "Is it a cat? No!", "Is it a hen? No!", "If it is not a cat or a hen, what is it?", "It is one big bug!", "They all ran out."]}, {"t": "By the Pond", "l": ["We sit by the pond.", "It is hot, so we swim.", "There is an ant on the log!", "Do not sit on it!", "Up it ran on my leg.", "Would your pup swim?", "It would! No more ants!"]}], "3": [{"t": "Her Cat", "l": ["She has a cat.", "Her cat likes to nap in the sun.", "It is time to get up!", "Then it will run.", "Who is that?", "It is her cat!"]}, {"t": "The Pond", "l": ["We ran to the pond.", "Some ducks were in the pond.", "I could see them swim.", "Their legs were wet.", "Now I will hop into the pond with them!", "How fun it is!"]}, {"t": "A New Hat", "l": ["Meg has a new hat.", "It is red.", "Other people like it.", "Which hat is new?", "Only one hat is new.", "It has been in the van.", "Just Meg and me got it."]}], "4": [{"t": "Our Van", "l": ["Here is our van.", "It is very big.", "Dad will go to the shop in it.", "Two of us can go.", "Mom may go with us.", "Then we go back home."]}, {"t": "The Hill", "l": ["I know a hill.", "It is over the pond.", "Many ants are on the hill.", "Dad and I ran up it.", "I got up first!", "Where is Dad?", "He is down the hill, back by the pond."]}, {"t": "Good Ham", "l": ["Dad will make good ham.", "It is hot, hot, hot!", "Mom did not have any.", "These buns are good, also.", "I have more than Dad!", "Use a bun, this way.", "Dad is glad, and we all hug him."]}], "5": [{"t": "A Hot Day", "l": ["It is a hot day.", "It is too hot to work.", "We want to swim.", "After his work, Dad will take us to the pond.", "It is a long way, but it is fun."]}, {"t": "Help Mom", "l": ["Mom must find her bag.", "I want to help.", "Look in the van.", "Look through the hut.", "Look in the tub!", "Well, it is right here!", "It was on the bed."]}, {"t": "The Little Pig", "l": ["The little pig is most glad in the mud.", "Its mud pit was made by the pig.", "Each day, it digs more.", "It is too much mud for Dad!", "It should not get out, because the mud is so good.", "Even Dad can not get it out!", "Think before you hug it."]}], "6": [{"t": "The Old Man", "l": ["An old man sat by the water.", "He got a rod and a hat.", "Why is the man still?", "He needs a fish!", "Come back, fish, come back!", "He did not get off the log."]}, {"t": "My Name", "l": ["My name is {N}.", "I am big.", "My pup has the same name!", "I say it, and the pup runs around me.", "It never gets off the mat."]}, {"t": "A Great Gift", "l": ["Dad got something for me.", "It is such a great gift!", "I want another one.", "Next time, I will get it again.", "Those are the last ones in the world."]}], "7": [{"t": "At School", "l": ["We went to school.", "Three of us read at a desk.", "Every one has a place.", "The best part is the song.", "Tell me what you thought."]}, {"t": "The House", "l": ["A small house is under a high hill.", "Part of it is red.", "Dad found it.", "He put his bag in it.", "Both of us thought it might be great."]}, {"t": "A Good Year", "l": ["It was a good year.", "I went away to camp.", "I set up a tent.", "It was really fun while it was hot.", "That is life!", "I own the tent."]}], "8": [{"t": "The Book", "l": ["Meg has a book.", "It is white, with a red top.", "She gives it to Tim.", "Tim came to get it.", "Tim reads it, and he keeps it.", "He always reads it to the end."]}, {"t": "My Room", "l": ["I live in a small room.", "My room is not big.", "There is a bed and a desk.", "The rug is left of the bed.", "Between the desk and the bed is a lamp.", "I am sure it is better than a tent.", "A room without a lamp is not fun."]}, {"t": "Free Stuff", "l": ["Is it free? Yes!", "I read the information.", "Few things are free.", "Let me show you.", "You do not need money.", "Once, I got a hat for free.", "It was hard to give it up."]}], "9": [{"t": "Night", "l": ["It is night.", "The children get in bed.", "Dad reads a page.", "He puts out the lamp.", "Please be still until day.", "Since it is night, no one will play."]}, {"t": "In the City", "l": ["A group of men run in the city.", "It was a large city.", "They had food in hand.", "They run enough to be hot.", "Each man has a number on his head.", "Today they will play."]}, {"t": "The Black Cat", "l": ["The black cat ran up the line.", "Up, up, up in the air!", "Did you ever see a cat in the air?", "Please call the men.", "They open a net.", "They try to help the cat down."]}], "10": [{"t": "The Red Car", "l": ["My family has a red car.", "It is a real fast car.", "Mother took us to the shop.", "During the day, we saw a lot of people.", "It is far, but we are not sad.", "The car is full of bags."]}, {"t": "Dad's Job", "l": ["Someone told Dad about a job.", "It is an important job.", "Dad must change his hat.", "However, he can not find it.", "Mother can find anything.", "She told him it is on his head!"]}, {"t": "The Far Hill", "l": ["A person sat on the side of a far hill.", "A light was on in the hut.", "Of course, the person went to see.", "A red car was against the hut.", "It was full of people.", "The person did feel glad."]}], "11": [{"t": "The Game", "l": ["We play a game together.", "Meg and Tim run along the path.", "Meg is first, and Tim is second.", "Tim is young, and Meg is not.", "Soon the game is done."]}, {"t": "The Box", "l": ["Dad has a special box.", "It is red and black.", "Nothing is in it yet.", "He will buy a gift for it.", "It is a kind gift, so he will take care.", "He puts it in the box."]}, {"t": "The Word List", "l": ["I have a list of words.", "I have seen each word.", "I often read the list in the sun.", "Though it is long, I will start.", "In order, I read each word.", "Then the job is done."]}], "12": [{"t": "Four Ducks", "l": ["Here is a story about four ducks.", "The ducks sat in front of the pond.", "They heard a sound.", "Oh no! It was a big frog!", "The ducks were almost in the water.", "They ran up on the land."]}, {"t": "The Problem", "l": ["I have a problem.", "I ask Mom what it will mean.", "She is able to help.", "She tells me to write it down.", "Maybe it is not so bad.", "Now I learn about it."]}, {"t": "The Shop", "l": ["A long time ago, a man had a shop on the street.", "It was his business.", "He had everything: hats, bags, and jam.", "Nothing else was above the shop but the sun.", "He did not stop.", "His face was glad."]}]};
 let lmTarget = 1;
+// Landmarks reached so far (one per 25 words, which is 150 points each). Stories unlock one block per landmark.
+const landmarksReached = st => Math.floor(Math.min(pointsOf(st), totalPts(st)) / (LANDMARK * WORD_PTS));
 function renderLm(k) {
   const st = cur(); if (!st) return;
   const from = (k - 1) * LANDMARK + 1, to = k * LANDMARK;
@@ -1503,7 +1507,7 @@ function renderLm(k) {
 }
 function showLmStories(k) {
   const st = cur(); if (!st) return;
-  const reached = Math.max(Math.floor(Math.min(st.nextIdx, goalOf(st)) / LANDMARK), k), names = lmList(st);
+  const reached = Math.max(landmarksReached(st), k), names = lmList(st);
   $("lmBlock").innerHTML = Array.from({ length: reached }, (_, i) => `<option value="${i + 1}">${i * LANDMARK + 1} to ${(i + 1) * LANDMARK}  (${esc((names[i] || LANDMARKS[i])[0])})</option>`).join("");
   $("lmBlock").value = String(k); renderLm(k); show("lmstories");
 }
@@ -1512,8 +1516,8 @@ $("lmBack").onclick = () => { renderStudent(); show("student"); };
 $("lmPrint").onclick = () => { try { window.print(); } catch (e) { $("lmWords").textContent = "Printing isn't available here."; } };
 $("lmBtn").onclick = () => {
   const st = cur(); if (!st) return;
-  const reached = Math.floor(Math.min(st.nextIdx, goalOf(st)) / LANDMARK);
-  if (!reached) { $("stuMsg").textContent = "Stories unlock when the student reaches the first landmark, at word 25."; return; }
+  const reached = landmarksReached(st);
+  if (!reached) return;
   showLmStories(reached);
 };
 $("celebStories").onclick = () => { $("celeb").hidden = true; showLmStories(lmTarget); };

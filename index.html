@@ -69,6 +69,7 @@ textarea{width:100%;min-height:110px}
 .card{background:#fffdf6;border:5px solid var(--wood);border-radius:28px;box-shadow:0 8px 0 #4f3216;min-height:min(46vh,320px);
  display:flex;align-items:center;justify-content:center;margin:12px 0 10px;padding:18px}
 .word{font-size:clamp(4rem,19vw,9rem);line-height:1;text-align:center;word-break:break-word}
+.ctype{text-align:left;color:var(--soft);font-weight:700;font-size:.95rem;margin:6px 4px 2px}
 .count{text-align:center;color:var(--soft);margin-bottom:12px;min-height:1.4em}
 .bar{height:10px;background:#d4e4dc;border-radius:99px;overflow:hidden;margin:0 auto 16px;max-width:420px}
 .bar i{display:block;height:100%;background:var(--accent);width:0}
@@ -162,7 +163,7 @@ body.printing-cert #cert{display:flex!important}
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
       <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" (Under More options on the student page you can switch this to "Spell [word]. What word?" instead.) Missed words are taught one at a time. When 3 have been missed (or the check ends), they are practiced together in shuffled rounds, with known words added when there are too few cards. A missed word is taught again and comes back after 2 cards. Each word needs 3 correct reads in the rounds, then it is done for today.</p>
-      <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
+      <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word that turned green after being learned is read cold once more after 7 practice days. If it is missed, it goes back to yellow and keeps its points. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
       <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words, such as words 1 to 25 at the first landmark. You can print them again later from the student page.</p>
       <p><b>Points.</b> The trail counts points. Each word is worth 6 points. A word read right at the check earns all 6. A missed word earns 1 point when it is learned, 2 more when it is read right on the next practice day, and 3 more on the day after that, when it turns green. Finishing every word on the trail adds a 100 point bonus, so a 150 word trail is 1000 points. Points are never taken away. The word chart below the trail shows which words are known.</p>
       <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
@@ -238,12 +239,13 @@ body.printing-cert #cert{display:flex!important}
 <section id="session" hidden>
   <div class="top">
     <button class="btn small" id="endBtn">End session</button>
-    <span class="badge" id="phase"></span>
+    <span class="badge" id="phase" hidden></span>
     <span class="badge timer" id="timer"></span>
     <button class="btn small" id="pauseBtn">⏸ Pause</button>
     <button class="btn small" id="undoBtn">Undo</button>
   </div>
   <div class="card"><div class="word" id="cardWord"></div></div>
+  <div class="ctype" id="cardType"></div>
   <div class="count" id="cardCount"></div>
   <div class="bar"><i id="barFill"></i></div>
   <div class="starline" id="starLine"></div>
@@ -368,6 +370,8 @@ const RELEARN_GAP      = 3;  // cards before that word returns
 const DAYS_TO_KNOWN    = 2;  // practice days after the day it was learned, read right, to turn green
 const WORD_PTS         = 6;  // points a word is worth. Learned 1, next practice day 2 more, the day after 3 more (known). Known at the check: all 6.
 const TRAIL_BONUS      = 100; // bonus for finishing every word. 150 words x 6 + 100 = 1000 points.
+const RECHECK_DAYS     = 7;  // practice days after a word turns green before it is checked once more
+const RECHECK_MAX      = 3;  // green words rechecked at the start of a session
 const WARMUP_MAX       = 5;  // yellow words reviewed at the start of a session
 const PENDING_RUNS_MAX = 1;  // groups of earlier-missed words relearned at the start of a session
 const TARGET_MISS_LIMIT= 3;  // misses on the new word before it is set aside for next time
@@ -613,9 +617,10 @@ $("pauseEnd").onclick = () => { $("pauseOv").hidden = true; if (session) session
 $("startBtn").dataset.ready = 1;
 function startSession() {
   const st = cur(); if (!st) return;
+  st.pdates = st.pdates || []; if (!st.pdates.includes(today())) st.pdates.push(today());
   session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
     endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false, paused: false, pausedAt: 0, startIdx: st.nextIdx, startPts: pointsOf(st),
-    stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, group: [], relearn: {}, teachQ: [], learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
+    stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, group: [], relearn: {}, rechecked: [], recheckMissed: [], teachQ: [], learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };
   $("pauseOv").hidden = true; show("session"); startTimer(); nextCard();
 }
 // Retrieval practice for a group of missed words (day 1).
@@ -703,7 +708,8 @@ function nextCard() {
   if (!S.warmDone) {
     S.warmDone = true;
     const w = shuffle(Object.keys(st.words).filter(k => st.words[k].s === "learning" && st.words[k].last !== today())).slice(0, WARMUP_MAX);
-    if (w.length) { S.queue = w.map(word => ({ word, role: "review" })); return nextCard(); }
+    const re = shuffle(Object.keys(st.words).filter(k => recheckDue(st, k))).slice(0, RECHECK_MAX);
+    if (w.length || re.length) { S.queue = shuffle([...re.map(word => ({ word, role: "recheck" })), ...w.map(word => ({ word, role: "review" }))]); return nextCard(); }
   }
   if (!S.checking && S.pendingRuns < PENDING_RUNS_MAX) {
     const g = Object.keys(st.words).filter(k => st.words[k].s === "pending" && !S.skip.includes(k)).slice(0, GROUP_SIZE);
@@ -722,11 +728,15 @@ function nextCard() {
   S.cur = { word: WORDS[st.nextIdx], role: "check" };
   renderSession();
 }
+function recheckDue(st, k) {
+  const e = st.words[k], n = (st.pdates || []).length;
+  return e.s === "known" && e.knownAt != null && !e.rechecked && n - e.knownAt >= RECHECK_DAYS;
+}
 function creditDay(w) {
   const e = cur().words[w];
   if (e && e.s === "learning" && e.last !== today()) {
     e.days++; e.last = today();
-    if (e.days >= DAYS_TO_KNOWN) { e.s = "known"; session.mastered.push(w); giveWordPts(e, WORD_PTS); }
+    if (e.days >= DAYS_TO_KNOWN) { e.s = "known"; session.mastered.push(w); giveWordPts(e, WORD_PTS); e.knownAt = (cur().pdates || []).length; e.rechecked = false; }
     else giveWordPts(e, e.days === 1 ? 3 : 1 + e.days);
   }
 }
@@ -750,6 +760,15 @@ function answer(yes) {
     if (yes) creditDay(c.word);
     else {
       const e = st.words[c.word]; e.days = 0; e.last = today(); S.reviewMissed.push(c.word);
+      S.relearn[c.word] = { ok: 0, misses: 0 };
+      insertCard({ word: c.word, role: "relearn" }, RELEARN_GAP);
+      return teach({ run: true, again: true, title: "Not yet" });
+    }
+  } else if (c.role === "recheck") {
+    const e = st.words[c.word];
+    if (yes) { e.rechecked = true; S.rechecked.push(c.word); }
+    else {
+      e.s = "learning"; e.days = 0; e.last = today(); e.rechecked = false; S.recheckMissed.push(c.word);
       S.relearn[c.word] = { ok: 0, misses: 0 };
       insertCard({ word: c.word, role: "relearn" }, RELEARN_GAP);
       return teach({ run: true, again: true, title: "Not yet" });
@@ -802,9 +821,11 @@ $("undoBtn").onclick = () => {
 function renderSession() {
   const S = session, st = cur(), c = S.cur;
   $("cardWord").textContent = c.word;
+  { const w = st.words[c.word], t = c.role === "recheck" ? "long-term check" : c.role === "check" ? "assessing" : (c.role === "target" || c.role === "relearn" || (w && w.s === "learning")) ? "learning" : "known";
+    $("cardType").textContent = "Card type: " + t; }
   const ph = $("phase"); ph.className = "badge";
   if (c.role === "check") { ph.textContent = "Checking"; $("cardCount").textContent = `Word ${st.nextIdx + 1} of ${goalOf(st)}`; $("barFill").style.width = (st.nextIdx / goalOf(st) * 100) + "%"; $("cardHint").textContent = "Can the student read this word?"; }
-  else if (c.role === "review" || c.role === "relearn" || !S.run) { ph.textContent = c.role === "relearn" ? "Trying again" : "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = "Words practiced before"; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
+  else if (c.role === "review" || c.role === "recheck" || c.role === "relearn" || !S.run) { ph.textContent = c.role === "relearn" ? "Trying again" : "Warm-up review"; ph.classList.add("rev"); $("cardCount").textContent = "Words practiced before"; $("barFill").style.width = "0"; $("cardHint").textContent = "Can the student read this word?"; }
   else { ph.textContent = "Learning a word"; ph.classList.add("learn");
     const R = S.run, ws = Object.keys(R.words), need = ws.length * REP_DAY1;
     const got = ws.reduce((n, w) => n + Math.min(R.words[w].ok, REP_DAY1), 0);
@@ -846,7 +867,7 @@ function endSession() {
     `<li><b>Points earned today:</b> ${pointsOf(st) - (S.startPts || 0)} (${pointsOf(st)} of ${totalPts(st)} on the trail)</li>` +
     `<li><b>Words checked:</b> ${S.checked} (${S.checkedYes} read, ${S.checkedNo} missed)</li>` +
     (S.timeUp ? "<li><b>Time limit reached.</b></li>" : "") +
-    li("Started learning today:", S.learned) + li("Now known:", S.mastered) +
+    li("Started learning today:", S.learned) + li("Now known:", S.mastered) + li("Rechecked after 7 days, still known:", S.rechecked) + li("Missed at the 7 day recheck, back to practicing:", S.recheckMissed) +
     (S.reviewed ? `<li><b>Warm-up words reviewed:</b> ${S.reviewed}</li>` : "") +
     li("Missed in warm-up, will be relearned:", S.reviewMissed) + li("Known words missed while practicing:", S.anchorMissed) +
     li("Set aside for next time:", S.aborted) +

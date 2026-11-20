@@ -1558,7 +1558,7 @@ $("insBtn").onclick = () => { renderInsights(); show("insights"); };
 $("insBack").onclick = () => { renderHome(); show("home"); };
 // ---- Game cards for home practice: LOST! ----
 const GC_COUNTS = { pending: 1, learning: 3, known: 6 };   // 1 red, 3 yellow, 6 green word cards
-const GC_COLORS = [["blue", "#2b7bd6"], ["purple", "#7b4bc0"], ["orange", "#e8832a"], ["teal", "#1f9d9d"], ["pink", "#d9569a"], ["brown", "#8a5a2b"], ["navy", "#2c3e7a"], ["gray", "#6b7a8a"]];
+const GC_COLORS = [["blue", "#2b7bd6"], ["purple", "#7b4bc0"], ["orange", "#e8832a"], ["teal", "#1f9d9d"], ["pink", "#d9569a"], ["green", "#3fa34d"], ["coral", "#f0605d"], ["sky blue", "#3ab0e8"]];
 // Each student gets one stripe color and keeps it. The first color no other student is using.
 function studentColor(st) {
   if (!st.color || !GC_COLORS.some(c => c[1] === st.color)) {

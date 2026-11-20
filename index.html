@@ -50,12 +50,13 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:4px soli
 input[type=text],input[type=number],textarea{font:inherit;padding:10px 12px;border:3px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
 input[type=text]{flex:1;min-width:160px}
 textarea{width:100%;min-height:110px}
-.stu{display:flex;align-items:center;gap:10px;background:var(--paper);border:3px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+.stu{display:flex;align-items:center;gap:10px;background:var(--paper);border:3px solid var(--line);border-radius:14px;padding:6px 12px;margin-bottom:8px;cursor:pointer}
 .stu:hover{border-color:var(--accent)}
-.stu .name{font-weight:700;font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.stu .name{font-weight:700;font-size:1.05rem;line-height:1.2;display:flex;align-items:center;gap:10px}
 .stu .mini{flex:0 0 auto;width:72px;height:10px;background:#d4e4dc;border-radius:99px;overflow:hidden}
 .stu .mini i{display:block;height:100%;background:var(--accent);border-radius:99px}
-.stu .meta{color:var(--soft);font-size:.9rem}
+.stu .meta{color:var(--soft);font-size:.82rem;line-height:1.25}
+.stu .btn{padding:3px 10px;font-size:.85rem;box-shadow:0 3px 0 var(--ink)}
 .stu .grow{flex:1}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
 .chip{border-radius:999px;padding:5px 12px;font-weight:700;font-size:.9rem;border:2px solid transparent}
@@ -165,7 +166,7 @@ body.printing-cert #cert{display:flex!important}
     <details>
       <summary>How Word Trail works</summary>
       <p><b>Check.</b> The app shows the high-frequency words in order. Tap <b>Yes</b> if the student reads the word, <b>No</b> if not.</p>
-      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. Say [word]. [pause] What are the sounds in [word]? What word?" (Under More options on the student page you can switch this to "Spell [word]. What word?" instead.) Missed words are taught one at a time. When 3 have been missed (or the check ends), they are practiced together in shuffled rounds, with known words added when there are too few cards. A missed word is taught again and comes back after 2 cards. Each word needs 3 correct reads in the rounds, then it is done for today.</p>
+      <p><b>Learn.</b> When a word is missed, the app prompts you to say: "This is [word]. What word? [pause] Spell [word]. Read. [pause] Yes, [word]." Missed words are taught one at a time. When 3 have been missed (or the check ends), they are practiced together in shuffled rounds, with known words added when there are too few cards. A missed word is taught again and comes back after 2 cards. Each word needs 3 correct reads in the rounds, then it is done for today.</p>
       <p><b>Landmark stories.</b> When a student reaches a landmark, the celebration offers a printable page of short stories that practice that block of 25 words. The Landmark stories link on the student page appears after the first landmark and lists only the blocks reached.</p>
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word that turned green after being learned is read cold once more after 7 practice days. If it is missed, it goes back to yellow and keeps its points. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
       <p><b>Points.</b> The trail counts points. Each word is worth 6 points. A word read right at the check earns all 6. A missed word earns 1 point when it is learned, 2 more when it is read right on the next practice day, and 3 more on the day after that, when it turns green. Finishing every word on the trail adds a 100 point bonus, so a 150 word trail is 1000 points. Points are never taken away. The word chart below the trail shows which words are known.</p>
@@ -216,14 +217,6 @@ body.printing-cert #cert{display:flex!important}
       <button class="btn quiet" id="ctxBtn" hidden>Practice learned words in context</button>
       <button class="btn quiet" id="lmBtn" hidden>Landmark stories</button>
     </div>
-    <details style="margin-top:12px">
-      <summary style="font-weight:600;font-size:.88rem;color:var(--soft)">More options</summary>
-      <fieldset style="border:0;padding:0;margin:10px 0 0">
-        <legend style="font-weight:700;padding:0;margin-bottom:6px">When a word is missed, the correction prompt asks the student to</legend>
-        <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="sounds"> say the sounds in the word</label>
-        <label style="display:block;margin:4px 0"><input type="radio" name="fbmode" value="spell"> spell the word</label>
-      </fieldset>
-    </details>
     <p class="status" id="stuMsg"></p>
   </div>
   <div class="panel">
@@ -572,7 +565,6 @@ function renderStudent() {
   $("nextInfo").innerHTML = next + (due ? ` · ${due} practicing word${due === 1 ? "" : "s"} to review today` : "") + (c.pending ? ` · ${c.pending} missed word${c.pending === 1 ? "" : "s"} to learn` : "");
   $("startBtn").textContent = Object.keys(st.words).length ? "Back on the trail" : "Hit the trail";
   renderTrail(st);
-  document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.checked = r.value === (st.feedback || "sounds"); });
   $("certBtn").hidden = pointsOf(st) < totalPts(st);
   $("wordsHead").textContent = `All ${goalOf(st)} words`;
   $("stuMsg").textContent = "";
@@ -593,7 +585,6 @@ $("stuReset").onclick = () => {
   if (b.dataset.armed) { const st = cur(); st.words = {}; st.nextIdx = 0; save(); b.dataset.armed = ""; b.textContent = "Reset this student"; renderStudent(); }
   else { b.dataset.armed = 1; b.textContent = "Tap again to erase progress"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Reset this student"; }, 3000); }
 };
-document.querySelectorAll('input[name="fbmode"]').forEach(r => { r.onchange = () => { if (r.checked && cur()) { cur().feedback = r.value; save(); } }; });
 // ====================================================================
 // SESSION: check new words, learn missed words with retrieval practice
 // ====================================================================
@@ -857,13 +848,12 @@ function renderSession() {
   $("modal").hidden = !m;
   if (m) {
     $("modalTitle").textContent = m.title || "";
-    const spell = st.feedback === "spell";
-    $("modalWord").innerHTML = spell ? esc(m.word) : sounds(m.word).map(g => `<span class="snd">${esc(g)}</span>`).join("");
+    $("modalWord").innerHTML = esc(m.word);
     { const n = m.word.length, rem = n <= 3 ? 11 : n <= 5 ? 9 : n <= 7 ? 7 : n <= 9 ? 5.5 : 4.2;
       $("modalWord").style.fontSize = `min(${rem}rem, ${Math.max(6, Math.floor(66 / (n * 0.68)))}vw)`; }
     // Correction script the grown-up reads aloud
     const w = m.word;
-    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. Say <b>${esc(w)}</b>. <i style="color:var(--soft)">[pause]</i> ${spell ? `Spell <b>${esc(w)}</b>.` : `What are the sounds in <b>${esc(w)}</b>?`} What word?</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
+    $("modalText").innerHTML = `<span class="say">Say to the student:</span><span class="script">This is <b>${esc(w)}</b>. What word? <i style="color:var(--soft)">[pause]</i> Spell <b>${esc(w)}</b>. Read. <i style="color:var(--soft)">[pause]</i> Yes, <b>${esc(w)}</b>.</span>` + (m.note ? `<span class="say">${esc(m.note)}</span>` : "");
     $("modalBtn").textContent = m.run ? (m.again ? "Keep going" : "Start learning") : "Next";
   }
 }

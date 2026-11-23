@@ -308,6 +308,7 @@ body.printing-cert #cert{display:flex!important}
   <h1>Teacher insights</h1>
   <p class="sub" id="insNote"></p>
   <div class="panel" id="insAttn"></div>
+  <div class="panel" id="insWeek"></div>
   <div class="panel" id="insWords"></div>
   <div class="panel" id="insStu"></div>
 </div>
@@ -944,7 +945,13 @@ $("endBtn").onclick = endSession;
 // ====================================================================
 function endSession() {
   stopTimer(); $("pauseOv").hidden = true;
-  const S = session, st = cur(); S.modal = null; $("modal").hidden = true; save();
+  const S = session, st = cur(); S.modal = null; $("modal").hidden = true;
+  // One log entry per day, used by the weekly progress cards.
+  { const add = pointsOf(st) - (S.startPts || 0); st.log = st.log || []; let e = st.log.find(x => x.d === today());
+    if (!e) { e = { d: today(), pts: 0, mastered: [], learned: [] }; st.log.push(e); }
+    e.pts += add; (S.mastered || []).forEach(w => { if (!e.mastered.includes(w)) e.mastered.push(w); }); (S.learned || []).forEach(w => { if (!e.learned.includes(w)) e.learned.push(w); });
+    st.log = st.log.slice(-60); }
+  save();
   $("sumWho").textContent = `${st.name}, ${today()}. Nice hiking!`;
   const li = (label, arr) => arr.length ? `<li><b>${label}</b> ${arr.map(esc).join(", ")}</li>` : "";
   $("sumList").innerHTML =
@@ -1568,6 +1575,7 @@ function renderInsights() {
       + `<p style="margin:10px 0 6px"><b>Missed at the first check.</b> Words that at least half the students did not read the first time.</p>`
       + (firstL.length ? `<div class="chips">${firstL.map(r => chip(r, "first", "r")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
       + (insGroupWords.length ? `<div style="margin-top:14px"><button class="btn yellow" id="insGcBtn">Print Game Cards for these ${insGroupWords.length} words</button></div>` : ""));
+  renderWeekPanel();
   if ($("insGcBtn")) $("insGcBtn").onclick = () => { renderGameCards(true); show("gamecards"); };
   // Per student
   const info = ss.map(st => {
@@ -1581,6 +1589,99 @@ function renderInsights() {
   const attn = info.filter(i => i.flags.length);
   $("insAttn").innerHTML = `<h2>Needs attention</h2>` + (attn.length ? `<ul class="sumlist">${attn.map(i => `<li><b>${esc(i.st.name)}:</b> ${i.flags.map(esc).join(", ")}</li>`).join("")}</ul>` : `<p class="status">Nothing to flag.</p>`);
   $("insStu").innerHTML = `<h2>Each student</h2>` + (info.length ? `<ul class="sumlist">${info.map(i => `<li><b>${esc(i.st.name)}</b>: ${i.pct}% of the trail. ${i.c.known} known, ${i.c.learning} practicing, ${i.c.pending} missed.${i.last ? ` Last session ${i.ago === 0 ? "today" : i.ago === 1 ? "yesterday" : i.ago + " days ago"}.` : " No session date recorded."}</li>`).join("")}</ul>` : `<p class="status">No students yet.</p>`);
+}
+
+// ---- Weekly progress cards for parents ----
+const WEEK_DAYS = 7, MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const isoDaysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); const p = x => String(x).padStart(2, "0"); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+const fmtDay = iso => { const d = new Date(iso + "T00:00:00"); return `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+function weekInfo(st) {
+  const from = isoDaysAgo(WEEK_DAYS - 1), to = today();
+  const days = (st.pdates || []).filter(d => d >= from && d <= to).length;
+  const log = (st.log || []).filter(e => e.d >= from && e.d <= to);
+  const learned = []; log.forEach(e => (e.mastered || []).forEach(w => { if (!learned.includes(w)) learned.push(w); }));
+  const c = counts(st);
+  const practicing = WORDS.slice(0, goalOf(st)).filter(w => st.words[w] && (st.words[w].s === "learning" || st.words[w].s === "pending"));
+  return { from, to, days, pts: log.reduce((n, e) => n + (e.pts || 0), 0), ptsKnown: log.length > 0 || days === 0, learned, known: c.known, practicing };
+}
+function renderWeekPanel() {
+  const ss = state.students.slice().sort((a, b) => a.name.localeCompare(b.name)), box = $("insWeek");
+  if (!ss.length) { box.innerHTML = ""; return; }
+  const from = isoDaysAgo(WEEK_DAYS - 1);
+  box.innerHTML = `<h2>Weekly progress cards for parents</h2><p style="margin:0 0 8px">Covers the last ${WEEK_DAYS} days (${fmtDay(from)} to ${fmtDay(today())}). One page per student. Each page shows only that student's name.</p>`
+    + `<div id="weekList">${ss.map(st => { const w = weekInfo(st); return `<label style="display:block;margin:4px 0"><input type="checkbox" data-wk="${st.id}" ${w.days ? "checked" : ""}> <b>${esc(st.name)}</b> <span class="status" style="display:inline">${w.days} day${w.days === 1 ? "" : "s"} on the trail this week</span></label>`; }).join("")}</div>`
+    + `<div style="margin-top:12px"><button class="btn yellow" id="weekBtn">Make weekly cards PDF</button></div><p class="status" id="weekNote"></p>`;
+  $("weekBtn").onclick = openWeekPdf;
+}
+function weekCanvas(st) {
+  const W = 1275, H = 1650, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"), w = weekInfo(st), col = studentColor(st)[1], M = 90;
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  g.fillStyle = col; g.fillRect(0, 0, W, 210);
+  g.textBaseline = "alphabetic"; g.textAlign = "left"; g.fillStyle = "#fff";
+  g.font = `700 54px ${GC_FONT}`; g.fillText("Hiking progress", M, 100);
+  g.font = `700 78px ${GC_FONT}`; g.fillText(st.name, M, 180);
+  g.font = `500 32px ${GC_FONT}`; g.textAlign = "right"; g.fillText(`${fmtDay(w.from)} to ${fmtDay(w.to)}`, W - M, 100);
+  g.font = `70px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.fillText("🥾", W - M, 180); g.textAlign = "left";
+  // Three numbers
+  const stats = [["Days on the trail", String(w.days)], ["Points earned", w.ptsKnown ? String(w.pts) : "–"], ["Words learned", String(w.learned.length)]];
+  const bw = (W - 2 * M - 2 * 30) / 3;
+  stats.forEach((s, i) => {
+    const x = M + i * (bw + 30), y = 270;
+    g.fillStyle = "#f6f1e6"; g.strokeStyle = "#cfc6b0"; g.lineWidth = 3; g.beginPath(); g.roundRect(x, y, bw, 200, 24); g.fill(); g.stroke();
+    g.fillStyle = "#2b2118"; g.textAlign = "center"; g.font = `700 100px ${GC_FONT}`; g.fillText(s[1], x + bw / 2, y + 112);
+    g.font = `500 30px ${GC_FONT}`; g.fillStyle = "#5b5144"; g.fillText(s[0], x + bw / 2, y + 168);
+  });
+  g.textAlign = "left";
+  // Trail bar
+  const goal = goalOf(st); let y = 540;
+  g.fillStyle = "#2b2118"; g.font = `700 40px ${GC_FONT}`; g.fillText("Words known so far", M, y);
+  g.textAlign = "right"; g.fillText(`${w.known} of ${goal}`, W - M, y); g.textAlign = "left"; y += 30;
+  g.fillStyle = "#e6e0cf"; g.beginPath(); g.roundRect(M, y, W - 2 * M, 44, 22); g.fill();
+  const fw = Math.max(44, (W - 2 * M) * Math.min(1, w.known / goal)); g.fillStyle = col; g.beginPath(); g.roundRect(M, y, fw, 44, 22); g.fill();
+  y += 150;
+  const chips = (list, fill, ink, maxN) => {
+    const shown = list.slice(0, maxN), more = list.length - shown.length; if (more > 0) shown.push(`+${more} more`);
+    g.font = `700 38px ${GC_FONT}`; let x = M, rows = 1;
+    shown.forEach(t => { const cw = g.measureText(t).width + 40; if (x + cw > W - M) { x = M; y += 68; rows++; } g.fillStyle = fill; g.beginPath(); g.roundRect(x, y - 40, cw, 58, 29); g.fill(); g.fillStyle = ink; g.fillText(t, x + 20, y); x += cw + 14; });
+    y += 70;
+  };
+  g.fillStyle = "#2b2118"; g.font = `700 40px ${GC_FONT}`; g.fillText("Words learned this week", M, y); y += 62;
+  if (w.learned.length) chips(w.learned, "#d7f0e0", "#17653a", 18);
+  else { g.font = `500 34px ${GC_FONT}`; g.fillStyle = "#5b5144"; g.fillText(w.ptsKnown ? "No new words finished this week." : "New words are listed from this week on.", M, y); y += 70; }
+  y += 30; g.fillStyle = "#2b2118"; g.font = `700 40px ${GC_FONT}`; g.fillText("Words we are still practicing", M, y); y += 62;
+  if (w.practicing.length) chips(w.practicing, "#fdeabd", "#7a5200", 12);
+  else { g.font = `500 34px ${GC_FONT}`; g.fillStyle = "#5b5144"; g.fillText("None right now.", M, y); y += 70; }
+  y += 20; g.fillStyle = "#5b5144"; g.font = `500 32px ${GC_FONT}`; g.fillText("At home, ask your child to read these words out loud.", M, y); y += 90;
+  // Teacher note
+  g.fillStyle = "#2b2118"; g.font = `700 40px ${GC_FONT}`; g.fillText("Note from teacher", M, y); y += 20;
+  g.strokeStyle = "#9a917d"; g.lineWidth = 2;
+  for (let i = 0; i < 4 && y + 80 < H - 60; i++) { y += 80; g.beginPath(); g.moveTo(M, y); g.lineTo(W - M, y); g.stroke(); }
+  return c.toDataURL("image/jpeg", 0.92);
+}
+let weekBlob = null;
+async function makeWeekPdf(ids) {
+  await loadJsPdf();
+  try { await Promise.all(["700 40px Teachers", "500 30px Teachers"].map(f => document.fonts.load(f))); } catch (e) {}
+  const { jsPDF } = window.jspdf, doc = new jsPDF({ unit: "in", format: "letter" });
+  ids.forEach((id, i) => { const st = state.students.find(s => s.id === id); if (!st) return; if (i) doc.addPage(); doc.addImage(weekCanvas(st), "JPEG", 0, 0, 8.5, 11); });
+  weekBlob = doc.output("blob"); return URL.createObjectURL(weekBlob);
+}
+async function openWeekPdf() {
+  const ids = [...document.querySelectorAll("#weekList input:checked")].map(i => i.dataset.wk);
+  if (!ids.length) { $("weekNote").textContent = "Check at least one student."; return; }
+  const inClaude = !!(window.claude && window.claude.use);
+  const win = inClaude ? null : window.open("", "_blank");
+  $("weekBtn").disabled = true; $("weekBtn").textContent = "Making PDF..."; $("weekNote").textContent = "";
+  try {
+    const url = await makeWeekPdf(ids);
+    if (inClaude) {
+      let saved = false;
+      try { const dl = await window.claude.use("downloads"); if (dl) { await dl.save({ filename: `Weekly progress cards ${today()}.pdf`, data: weekBlob }); saved = true; $("weekNote").textContent = "The PDF was saved. Open the saved file to print."; } } catch (e) { if (e && e.code === "declined") saved = true; }
+      if (!saved) $("weekNote").textContent = "The PDF could not be saved here.";
+    } else if (win) { win.location.href = url; $("weekNote").innerHTML = `If the PDF did not open, <a href="${url}" target="_blank">open it here</a>.`; }
+  } catch (e) { if (win) win.close(); $("weekNote").textContent = "The PDF could not be made here."; }
+  $("weekBtn").disabled = false; $("weekBtn").textContent = "Make weekly cards PDF";
 }
 $("insBtn").onclick = () => { renderInsights(); show("insights"); };
 $("insBack").onclick = () => { renderHome(); show("home"); };

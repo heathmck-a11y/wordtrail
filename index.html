@@ -1544,6 +1544,7 @@ $("ctxBtn").onclick = () => { const st = cur(); if (!st) return; $("ctxName").te
 const INS_STALE_DAYS = 7;   // days without a session before a student is flagged
 const INS_MISSED_FLAG = 3;  // missed words waiting before a student is flagged
 function daysSince(iso) { const a = new Date(iso + "T00:00:00"), b = new Date(today() + "T00:00:00"); return Math.round((b - a) / 86400000); }
+let insGroupWords = [];
 function renderInsights() {
   const ss = state.students, goal = goalOf(null), list = WORDS.slice(0, goal);
   $("insNote").textContent = ss.length ? `Based on the ${ss.length} student${ss.length === 1 ? "" : "s"} saved in this browser on this device.` : "No students yet.";
@@ -1556,12 +1557,15 @@ function renderInsights() {
   const pick = (key, minShare) => rows.filter(r => r[key] >= 2 && r[key] / r.checked >= minShare).sort((a, b) => b[key] - a[key] || b[key] / b.checked - a[key] / a.checked).slice(0, 12);
   const chip = (r, key, cls) => `<span class="chip ${cls}">${esc(r.w)} · ${r[key]} of ${r.checked}</span>`;
   const needL = pick("need", 0.5), firstL = pick("first", 0.5);
+  insGroupWords = ss.length < 2 ? [] : WORDS.slice(0, goal).filter(w => needL.some(r => r.w === w) || firstL.some(r => r.w === w));
   $("insWords").innerHTML = `<h2>Words to teach as a group</h2>` + (ss.length < 2
     ? `<p class="status">This needs at least 2 students. Add another student to see words that several of them are working on.</p>`
     : `<p style="margin:0 0 6px"><b>Still being worked on.</b> Words that are red or yellow for at least half the students who have checked them.</p>`
       + (needL.length ? `<div class="chips">${needL.map(r => chip(r, "need", "a")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
       + `<p style="margin:10px 0 6px"><b>Missed at the first check.</b> Words that at least half the students did not read the first time.</p>`
-      + (firstL.length ? `<div class="chips">${firstL.map(r => chip(r, "first", "r")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`));
+      + (firstL.length ? `<div class="chips">${firstL.map(r => chip(r, "first", "r")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
+      + (insGroupWords.length ? `<div style="margin-top:14px"><button class="btn yellow" id="insGcBtn">Print Game Cards for these ${insGroupWords.length} words</button></div>` : ""));
+  if ($("insGcBtn")) $("insGcBtn").onclick = () => { renderGameCards(true); show("gamecards"); };
   // Per student
   const info = ss.map(st => {
     const c = counts(st), pts = pointsOf(st), pct = Math.round(pts / totalPts(st) * 100);
@@ -1603,17 +1607,20 @@ function gcPick(st) {
 }
 const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a lost! card? You took a wrong turn. Put all your cards back in the pile and shuffle.|Place the lost! card off to the side, not back in the center pile.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
 const GC_PICS = [["🎒", "hiking backpack"], ["🥾", "hiking boot"], ["🧭", "compass"], ["⛺", "tent"], ["🌲", "pine tree"], ["🗺️", "trail map"]];
-function renderGameCards() {
-  const st = cur(); if (!st) return;
-  const col = studentColor(st), picks = gcPick(st);
-  const pi = (st.gcSet || 0) % GC_PICS.length, pic = GC_PICS[pi];
-  gcCurrent = { st, picks, color: col[1], pic: pic[0], pi };
+let gcFromIns = false;
+function renderGameCards(group) {
+  const st = group ? { name: "Group set" } : cur(); if (!st) return;
+  gcFromIns = !!group; $("gcAgain").hidden = !!group;
+  const col = group ? ["gold", "#e6a817"] : studentColor(st), picks = group ? insGroupWords.map(w => ({ w, k: "group" })) : gcPick(st);
+  const pi = ((group ? state.groupSet : st.gcSet) || 0) % GC_PICS.length, pic = GC_PICS[pi];
+  gcCurrent = { st, picks, color: col[1], pic: pic[0], pi, group: !!group };
   const fs = w => w.length <= 4 ? 27 : w.length <= 6 ? 23 : w.length <= 8 ? 19 : 15;
   const word = o => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:${fs(o.w)}pt">${esc(o.w)}</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`;
   const lost = [0, 1, 2, 3].map(() => `<div class="gcard" style="border-left-color:${col[1]}"><div class="gw" style="font-size:27pt">lost!</div><div class="gp">${pic[0]}</div><div class="gn">${esc(st.name)}</div></div>`);
   $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
     <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
+  if (group) { $("gcNote").textContent = `Group set: ${n} word cards for the words that several students are still working on, plus 4 cards that say lost!. The stripe color is gold. The picture on this set is a ${pic[1]}.`; $("gcLinkRow").hidden = true; return; }
   $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
   $("gcLinkRow").hidden = true;
 }
@@ -1668,9 +1675,14 @@ async function makeGamePdf() {
   });
   // Cards: word cards, then 4 LOST! cards
   const cards = picks.map(o => gcCanvas("word", o.w, st.name, color, gcCurrent.pic)).concat([0, 1, 2, 3].map(() => gcCanvas("word", "lost!", st.name, color, gcCurrent.pic)));
-  st.gcSet = gcCurrent.pi + 1; save();
+  if (gcCurrent.group) state.groupSet = gcCurrent.pi + 1; else st.gcSet = gcCurrent.pi + 1; save();
   const top = 0.6 + boxH + 0.3;
-  cards.forEach((img, i) => doc.addImage(img, "JPEG", M + (i % 4) * CW, top + Math.floor(i / 4) * CH, CW, CH));
+  let y0 = top, colN = 0;
+  cards.forEach(img => {
+    if (colN === 0 && y0 + CH > 10.4) { doc.addPage(); y0 = 0.6; }
+    doc.addImage(img, "JPEG", M + colN * CW, y0, CW, CH);
+    if (++colN === 4) { colN = 0; y0 += CH; }
+  });
   gcBlob = doc.output("blob");
   return URL.createObjectURL(gcBlob);
 }
@@ -1701,8 +1713,8 @@ async function openGamePdf() {
   $("gcPrint").disabled = false; $("gcPrint").textContent = "Open PDF to print";
 }
 $("gcBtn").onclick = () => { renderGameCards(); show("gamecards"); };
-$("gcAgain").onclick = renderGameCards;
-$("gcBack").onclick = () => { renderStudent(); show("student"); };
+$("gcAgain").onclick = () => renderGameCards();
+$("gcBack").onclick = () => { if (gcFromIns) { renderInsights(); show("insights"); } else { renderStudent(); show("student"); } };
 $("gcPrint").onclick = openGamePdf;
 $("cogBtn").onclick = () => { $("setReps").value = String(REP_DAY1); $("setMiss").value = String(TARGET_MISS_LIMIT); $("setCap").value = String(YELLOW_CAP); $("setWarm").value = String(WARMUP_MAX); $("setModal").hidden = false; };
 $("setCancel").onclick = () => { $("setModal").hidden = true; };

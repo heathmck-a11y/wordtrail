@@ -97,6 +97,11 @@ textarea{width:100%;min-height:110px}
 .ans.yes{background:var(--green)}.ans.no{background:var(--red)}
 .starline{text-align:center;font-weight:700;font-size:1.1rem;color:#8a5a00;margin:0 0 8px}
 .starline.bump{animation:bump .35s}
+.fan{text-align:center;margin:6px auto 14px;padding:14px 10px;border-radius:18px;background:linear-gradient(#fff6c9,#ffe27a);border:3px solid #e0a800;max-width:34rem;animation:fanin .6s cubic-bezier(.2,1.4,.4,1) both}
+.fanE{font-size:2rem;line-height:1.1}.fanN{font-size:4.2rem;font-weight:900;line-height:1.05;color:#7a4b00}.fanT{font-size:1.3rem;font-weight:800;color:#7a4b00}
+.fan.pop .fanN{animation:bump .5s .1s both}
+@keyframes fanin{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.fan,.fan.pop .fanN{animation:none}}
 @keyframes bump{40%{transform:scale(1.25)}}
 .float{position:fixed;left:50%;top:38%;font-size:2rem;font-weight:700;color:#f0a500;text-shadow:0 2px 6px rgba(0,0,0,.35);pointer-events:none;z-index:30;animation:flo .9s ease-out forwards}
 @keyframes flo{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-80px)}}
@@ -166,7 +171,7 @@ body.printing-cert #cert{display:flex!important}
       <g fill="#2f7d4f"><path d="M60 262 l18 -44 l18 44z"/><path d="M736 250 l16 -40 l16 40z"/><path d="M270 258 l14 -34 l14 34z"/></g>
     </svg>
     <button class="cog info" id="infoBtn" aria-label="About Word Trail" title="About Word Trail">i</button>
-    <button class="cog" id="cogBtn" aria-label="Settings" title="Settings">⚙</button>
+    <button class="cog" id="cogBtn" aria-label="Advanced Settings" title="Advanced Settings">⚙</button>
     <h1><span>W</span><span>o</span><span>r</span><span>d</span> <span>T</span><span>r</span><span>a</span><span>i</span><span>l</span></h1>
   </div>
   <p class="sub">The student reads each word. Words they know are checked off. Words they miss are taught right away and then practiced again and again, a little further apart each time.</p>
@@ -275,6 +280,7 @@ body.printing-cert #cert{display:flex!important}
 <section id="summary" hidden>
   <h1>Session summary</h1>
   <p class="sub" id="sumWho"></p>
+  <div class="fan" id="sumFan" hidden><div class="fanE" id="fanE">🎉🥾🎉</div><div class="fanN" id="fanN">+0</div><div class="fanT" id="fanT">points today!</div></div>
   <div class="panel"><ul class="sumlist" id="sumList"></ul></div>
   <div class="row">
     <button class="btn go" id="sumBack">Back to student</button>
@@ -368,7 +374,7 @@ body.printing-cert #cert{display:flex!important}
 </div>
 <div class="modal" id="setModal" hidden>
   <div class="mbox">
-    <div style="font-weight:800;font-size:1.3rem;margin-bottom:10px">Settings</div>
+    <div style="font-weight:800;font-size:1.3rem;margin-bottom:10px">Advanced Settings</div>
     <p style="text-align:left;margin:0 0 6px"><label for="setReps"><b>Correct reads</b> needed to learn a missed word in a session</label></p>
     <select id="setReps" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
     <p style="text-align:left;margin:14px 0 6px"><label for="setMiss"><b>Misses allowed</b> on a word before it is set aside for the next session</label></p>
@@ -378,7 +384,7 @@ body.printing-cert #cert{display:flex!important}
     <p style="text-align:left;margin:14px 0 6px"><label for="setWarm"><b>Yellow words read</b> at the start of each session</label></p>
     <select id="setWarm" style="font:inherit;padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:#fff;width:100%"><option value="0">All of them</option><option>3</option><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option></select>
     <p class="status" style="text-align:left">When new words are paused, every yellow word is read. Otherwise this limit applies.</p>
-    <p class="status" style="text-align:left">The first two are 3, the pause limit is 10 and the yellow words read is 5 unless you change them. These settings are saved in this browser on this device and apply to every student.</p>
+    <p class="status" style="text-align:left">The first two are 3, the pause limit is 10 and the yellow words read is 5 unless you change them. These advanced settings are saved in this browser on this device and apply to every student.</p>
     <div class="lenbtns"><button class="btn go" id="setSave">Save</button><button class="btn small" id="setCancel">Cancel</button></div>
   </div>
 </div>
@@ -950,6 +956,21 @@ function endSession() {
     (st.nextIdx >= goalOf(st) ? "<li><b>Every word has been checked.</b></li>" : `<li>Next word to check: #${st.nextIdx + 1}</li>`);
   show("summary");
   celebrate(S, st);
+  fanfare(pointsOf(st) - (S.startPts || 0), st);
+}
+// A short fanfare on the summary: the points earned this session count up, then pop.
+let fanTimer = null;
+function fanfare(n, st) {
+  const box = $("sumFan"); clearInterval(fanTimer); box.classList.remove("pop");
+  if (n <= 0) { box.hidden = true; return; }
+  box.hidden = false; box.style.animation = "none"; void box.offsetWidth; box.style.animation = "";
+  $("fanE").textContent = n >= 30 ? "🎉🏔️🎉" : "🎉🥾🎉";
+  $("fanT").textContent = (n === 1 ? "point" : "points") + " today, " + st.name + "!";
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let i = 0, steps = reduce ? 1 : Math.min(n, 30), ms = 900 / steps;
+  $("fanN").textContent = "+" + (reduce ? n : 0);
+  if (!reduce) fanTimer = setInterval(() => { i++; $("fanN").textContent = "+" + Math.round(n * i / steps); if (i >= steps) { clearInterval(fanTimer); box.classList.add("pop"); } }, ms);
+  if ($("celeb").hidden && !reduce) { try { confetti(); } catch (e) {} }
 }
 $("sumBack").onclick = () => { renderStudent(); show("student"); };
 $("sumAgain").onclick = startSession;
@@ -1623,6 +1644,7 @@ function gcCanvas(kind, text, name, color, icon) {
   }
   return c.toDataURL("image/jpeg", 0.92);
 }
+let gcBlob = null;
 async function makeGamePdf() {
   const { st, picks, color } = gcCurrent;
   await loadJsPdf();
@@ -1649,16 +1671,28 @@ async function makeGamePdf() {
   st.gcSet = gcCurrent.pi + 1; save();
   const top = 0.6 + boxH + 0.3;
   cards.forEach((img, i) => doc.addImage(img, "JPEG", M + (i % 4) * CW, top + Math.floor(i / 4) * CH, CW, CH));
-  return doc.output("bloburl");
+  gcBlob = doc.output("blob");
+  return URL.createObjectURL(gcBlob);
 }
 async function openGamePdf() {
   if (!gcCurrent || !gcCurrent.picks.length) return;
-  const win = window.open("", "_blank");   // opened now, from the tap, so the browser allows it
+  // Inside a Claude artifact the browser blocks a new tab for the PDF, so the file is offered as a download instead.
+  const inClaude = !!(window.claude && window.claude.use);
+  const win = inClaude ? null : window.open("", "_blank");   // opened now, from the tap, so the browser allows it
   $("gcPrint").disabled = true; $("gcPrint").textContent = "Making PDF...";
   try {
     const url = await makeGamePdf();
-    $("gcLink").href = url; $("gcLinkRow").hidden = false;
-    if (win) win.location.href = url;
+    let saved = false;
+    if (inClaude) {
+      try {
+        const dl = await window.claude.use("downloads");
+        if (dl) { await dl.save({ filename: `${gcCurrent.st.name.replace(/[^\w -]+/g, "").trim() || "student"} game cards.pdf`, data: gcBlob }); saved = true; $("gcNote").textContent = "The PDF was saved. Open the saved file to preview and print it."; }
+      } catch (e) { if (e && e.code === "declined") saved = true; }
+      if (!saved) { $("gcNote").textContent = "The PDF could not be saved here, so the cards will print from this page instead."; try { window.print(); } catch (e2) {} }
+    } else {
+      $("gcLink").href = url; $("gcLinkRow").hidden = false;
+      if (win) win.location.href = url;
+    }
   } catch (e) {
     if (win) win.close();
     $("gcNote").textContent = "The PDF could not be made here, so the cards will print from this page instead.";

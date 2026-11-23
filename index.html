@@ -512,7 +512,9 @@ function counts(st) {
 function renderHome() {
   const list = $("stuList"); list.innerHTML = "";
   $("stuEmpty").hidden = state.students.length > 0;
-  state.students.forEach(st => {
+  // Students who have gone longest without a session are listed first. A student who just did a session moves to the bottom.
+  const lastOf = st => st.lastAt || ((st.pdates || []).length ? Date.parse(st.pdates[st.pdates.length - 1]) || 0 : 0);
+  [...state.students].sort((a, b) => lastOf(a) - lastOf(b) || a.name.localeCompare(b.name)).forEach(st => {
     const c = counts(st);
     const row = document.createElement("div"); row.className = "stu";
     row.innerHTML = `<div class="grow"><div class="name">${esc(st.name)}<span class="mini" role="img" aria-label="Trail progress"><i style="width:${Math.min(100, Math.round(pointsOf(st) / totalPts(st) * 100))}%"></i></span></div>
@@ -694,6 +696,7 @@ $("startBtn").dataset.ready = 1;
 function startSession() {
   const st = cur(); if (!st) return;
   st.pdates = st.pdates || []; if (!st.pdates.includes(today())) st.pdates.push(today());
+  st.lastAt = Date.now();   // moves the student to the bottom of the home list
   session = { queue: [], run: null, cur: null, modal: null, warmDone: false, pendingRuns: 0, skip: [],
     endAt: Date.now() + (state.minutes || DEFAULT_MINUTES) * 60000, timeUp: false, paused: false, pausedAt: 0, startIdx: st.nextIdx, startPts: pointsOf(st),
     stars: 0, checked: 0, checkedYes: 0, checkedNo: 0, group: [], relearn: {}, rechecked: [], recheckMissed: [], teachQ: [], learned: [], mastered: [], reviewed: 0, reviewMissed: [], anchorMissed: [], aborted: [], undo: [] };

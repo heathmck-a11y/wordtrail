@@ -1686,7 +1686,8 @@ async function openWeekPdf() {
 $("insBtn").onclick = () => { renderInsights(); show("insights"); };
 $("insBack").onclick = () => { renderHome(); show("home"); };
 // ---- Game cards for home practice: LOST! ----
-const GC_COUNTS = { pending: 1, learning: 3, known: 6 };   // 1 red, 3 yellow, 6 green word cards
+const GC_COUNTS = { pending: 2, learning: 4, known: 8 };   // 2 red, 4 yellow, 8 green word cards = 14 word cards
+const GC_TOTAL = 14;   // word cards per set; a student with fewer words gets words repeated to reach this
 const GC_COLORS = [["blue", "#2b7bd6"], ["purple", "#7b4bc0"], ["orange", "#e8832a"], ["teal", "#1f9d9d"], ["pink", "#d9569a"], ["green", "#3fa34d"], ["coral", "#f0605d"], ["sky blue", "#3ab0e8"]];
 // Each student gets one stripe color and keeps it. The first color no other student is using.
 function studentColor(st) {
@@ -1707,6 +1708,12 @@ function gcPick(st) {
   const total = GC_COUNTS.pending + GC_COUNTS.learning + GC_COUNTS.known;
   const used = new Set(out.map(o => o.w));
   for (const k of ["known", "learning", "pending"]) shuffle(by[k]).forEach(w => { if (out.length < total && !used.has(w)) { used.add(w); out.push({ w, k }); } });
+  return gcFill(shuffle(out));
+}
+// Repeats words in turn (a student with 7 words gets each one twice) until the set has GC_TOTAL word cards.
+function gcFill(list) {
+  const out = list.slice();
+  for (let i = 0; list.length && out.length < GC_TOTAL; i++) out.push(list[i % list.length]);
   return shuffle(out);
 }
 const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a lost! card? You took a wrong turn. Put all your cards back in the pile and shuffle.|Place the lost! card off to the side, not back in the center pile.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
@@ -1715,7 +1722,7 @@ let gcFromIns = false;
 function renderGameCards(group) {
   const st = group ? { name: "Group set" } : cur(); if (!st) return;
   gcFromIns = !!group; $("gcAgain").hidden = !!group;
-  const col = group ? ["gold", "#e6a817"] : studentColor(st), picks = group ? insGroupWords.map(w => ({ w, k: "group" })) : gcPick(st);
+  const col = group ? ["gold", "#e6a817"] : studentColor(st), picks = group ? gcFill(insGroupWords.map(w => ({ w, k: "group" }))) : gcPick(st);
   const pi = ((group ? state.groupSet : st.gcSet) || 0) % GC_PICS.length, pic = GC_PICS[pi];
   gcCurrent = { st, picks, color: col[1], pic: pic[0], pi, group: !!group };
   const fs = w => w.length <= 4 ? 27 : w.length <= 6 ? 23 : w.length <= 8 ? 19 : 15;
@@ -1725,7 +1732,7 @@ function renderGameCards(group) {
     <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
   if (group) { $("gcNote").textContent = `Group set: ${n} word cards for the words that several students are still working on, plus 4 cards that say lost!. The stripe color is gold. The picture on this set is a ${pic[1]}.`; $("gcLinkRow").hidden = true; return; }
-  $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (n < 10 ? ` ${st.name} does not have 10 checked words yet, so there are only ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
+  $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (new Set(picks.map(o => o.w)).size < n ? ` ${st.name} has ${new Set(picks.map(o => o.w)).size} checked words so far, so some words are on more than one card to make ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
   $("gcLinkRow").hidden = true;
 }
 // Loads jsPDF only when a PDF is asked for, so the rest of the app never depends on the network.

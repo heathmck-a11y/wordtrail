@@ -193,7 +193,7 @@ body.printing-cert #cert{display:flex!important}
       <p><b>Keep.</b> A word learned this way turns yellow. Each time it is read correctly on a new day, it moves closer to green. After 2 more practice days it counts as known. A miss starts the day count over, and the points already earned are kept. Each session begins with a cold read of yellow words. A word that turned green after being learned is read cold once more after 7 practice days. If it is missed, it goes back to yellow and keeps its points. A word read right earns credit for the day. A word missed is taught again and read until it is right twice, but it does not earn credit that day and its count starts over.</p>
       <p><b>Points.</b> The trail counts points. Each word is worth 6 points. A word read right at the check earns all 6. A missed word earns 1 point when it is learned, 2 more when it is read right on the next practice day, and 3 more on the day after that, when it turns green. Finishing every word on the trail adds a 100 point bonus, so a 150 word trail is 1000 points. Points are never taken away. The word chart below the trail shows which words are known.</p>
       <p><b>Practice limit.</b> When a student has 10 practicing (yellow) words, or the number set under the cog, new words stop being checked. The session reads every practicing word instead, and checking starts again when fewer are left.</p>
-      <p><b>Time limit.</b> Each session has a timer (you choose 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
+      <p><b>Time limit.</b> Each session has a timer (you choose 1.5, 2, 3 or 4 minutes when you tap Hit the trail). A Pause button stops the timer if there is an interruption. When time is up, the session ends after the card on the screen. A word that was still being learned stays on the missed list and comes back next time. The next session picks up where this one left off.</p>
       <p>Words are the Kearns high-frequency list, words 1 to 300 (Texas Education Agency, 2021). Each trail is the first 150 words, worth 1000 points. Progress is saved in this browser on this device.</p>
     </details>
   </div>
@@ -310,6 +310,7 @@ body.printing-cert #cert{display:flex!important}
   <div class="panel" id="insAttn"></div>
   <div class="panel" id="insWeek"></div>
   <div class="panel" id="insWords"></div>
+  <div class="panel" id="insHard"></div>
   <div class="panel" id="insStu"></div>
 </div>
 </section>
@@ -395,6 +396,7 @@ body.printing-cert #cert{display:flex!important}
     <p style="text-align:left;margin:0 0 14px">Tap <b>Yes</b> only if the student read the word <b>right away, without sounding it out first</b>. That is the goal: automatic word reading. If they had to sound it out, tap <b>No</b> so the word gets more practice.</p>
     <div style="font-weight:800;font-size:1.4rem">How long today?</div>
     <div class="lenbtns">
+      <button class="btn go lenbtn" data-min="1.5">1.5 min</button>
       <button class="btn go lenbtn" data-min="2">2 min</button>
       <button class="btn go lenbtn" data-min="3">3 min</button>
       <button class="btn go lenbtn" data-min="4">4 min</button>
@@ -679,7 +681,7 @@ function startTimer() { stopTimer(); tick(); timerId = setInterval(tick, 1000); 
 $("startBtn").onclick = () => { $("lenModal").hidden = false; };
 $("lenCancel").onclick = () => { $("lenModal").hidden = true; };
 document.querySelectorAll(".lenbtn").forEach(b => b.onclick = () => {
-  state.minutes = parseInt(b.dataset.min, 10) || DEFAULT_MINUTES; save(); $("lenModal").hidden = true; startSession();
+  state.minutes = parseFloat(b.dataset.min) || DEFAULT_MINUTES; save(); $("lenModal").hidden = true; startSession();
 });
 // Pause: stops the timer and covers the card. Resume adds the paused time back so no practice time is lost.
 function pauseSession() {
@@ -830,11 +832,12 @@ function answer(yes) {
   const nowMs = Date.now(); if (nowMs - (S.lastAns || 0) < 350) return; S.lastAns = nowMs;   // ignore accidental double taps
   S.undo.push(JSON.stringify({ st, S: Object.assign({}, S, { undo: [] }) })); if (S.undo.length > 40) S.undo.shift();
   const teach = (extra) => { S.modal = Object.assign({ type: "teach", word: c.word, run: false }, extra); save(); renderSession(); };
+  if (!yes && c.role !== "check" && st.words[c.word]) st.words[c.word].miss = (st.words[c.word].miss || 0) + 1;   // all-time miss count for the Hard words report
   if (c.role === "check") {
     S.checked++; st.nextIdx++;
     if (yes) { st.words[c.word] = { s: "known", days: 0, last: "", first: "yes" }; S.checkedYes++; st.words[c.word].pts = WORD_PTS; awardPts(WORD_PTS); }
     else {
-      st.words[c.word] = { s: "pending", days: 0, last: "", first: "no" }; S.checkedNo++;
+      st.words[c.word] = { s: "pending", days: 0, last: "", first: "no", miss: 1 }; S.checkedNo++;
       S.group.push(c.word);
       if (S.group.length >= GROUP_SIZE) { const g = S.group; S.group = []; return teach({ run: startRun(g), title: "Not yet" }); }
       return teach({ run: false, title: "Not yet" });
@@ -1554,7 +1557,14 @@ $("ctxBtn").onclick = () => { const st = cur(); if (!st) return; $("ctxName").te
 const INS_STALE_DAYS = 7;   // days without a session before a student is flagged
 const INS_MISSED_FLAG = 3;  // missed words waiting before a student is flagged
 function daysSince(iso) { const a = new Date(iso + "T00:00:00"), b = new Date(today() + "T00:00:00"); return Math.round((b - a) / 86400000); }
-let insGroupWords = [];
+let insGroupWords = [], insHardWords = [], insNeedWords = [], insFirstWords = [];
+let insUseNeed = true, insUseFirst = true;   // which lists go on the group game cards
+function updateGroupBtn() {
+  const b = $("insGcBtn"); if (!b) return;
+  insGroupWords = WORDS.slice(0, goalOf(null)).filter(w => (insUseNeed && insNeedWords.includes(w)) || (insUseFirst && insFirstWords.includes(w)));
+  b.disabled = !insGroupWords.length;
+  b.textContent = insGroupWords.length ? `Print Game Cards for these ${insGroupWords.length} words` : "Choose a list to print";
+}
 function renderInsights() {
   const ss = state.students, goal = goalOf(null), list = WORDS.slice(0, goal);
   $("insNote").textContent = ss.length ? `Based on the ${ss.length} student${ss.length === 1 ? "" : "s"} saved in this browser on this device.` : "No students yet.";
@@ -1567,15 +1577,38 @@ function renderInsights() {
   const pick = (key, minShare) => rows.filter(r => r[key] >= 2 && r[key] / r.checked >= minShare).sort((a, b) => b[key] - a[key] || b[key] / b.checked - a[key] / a.checked).slice(0, 12);
   const chip = (r, key, cls) => `<span class="chip ${cls}">${esc(r.w)} · ${r[key]} of ${r.checked}</span>`;
   const needL = pick("need", 0.5), firstL = pick("first", 0.5);
-  insGroupWords = ss.length < 2 ? [] : WORDS.slice(0, goal).filter(w => needL.some(r => r.w === w) || firstL.some(r => r.w === w));
+  insNeedWords = ss.length < 2 ? [] : needL.map(r => r.w); insFirstWords = ss.length < 2 ? [] : firstL.map(r => r.w);
+  insGroupWords = WORDS.slice(0, goal).filter(w => (insUseNeed && insNeedWords.includes(w)) || (insUseFirst && insFirstWords.includes(w)));
   $("insWords").innerHTML = `<h2>Words to teach as a group</h2>` + (ss.length < 2
     ? `<p class="status">This needs at least 2 students. Add another student to see words that several of them are working on.</p>`
     : `<p style="margin:0 0 6px"><b>Still being worked on.</b> Words that are red or yellow for at least half the students who have checked them.</p>`
       + (needL.length ? `<div class="chips">${needL.map(r => chip(r, "need", "a")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
       + `<p style="margin:10px 0 6px"><b>Missed at the first check.</b> Words that at least half the students did not read the first time.</p>`
       + (firstL.length ? `<div class="chips">${firstL.map(r => chip(r, "first", "r")).join("")}</div>` : `<p class="status">No word is shared by 2 or more students right now.</p>`)
-      + (insGroupWords.length ? `<div style="margin-top:14px"><button class="btn yellow" id="insGcBtn">Print Game Cards for these ${insGroupWords.length} words</button></div>` : ""));
+      + (insNeedWords.length || insFirstWords.length ? `<div style="margin-top:14px"><p style="margin:0 0 6px"><b>Game cards include:</b></p>
+        <label style="display:block;margin:0 0 4px"><input type="checkbox" id="insUseNeed"${insUseNeed ? " checked" : ""}${insNeedWords.length ? "" : " disabled"}> Still being worked on (yellow list)</label>
+        <label style="display:block;margin:0 0 10px"><input type="checkbox" id="insUseFirst"${insUseFirst ? " checked" : ""}${insFirstWords.length ? "" : " disabled"}> Missed at the first check (red list)</label>
+        <button class="btn yellow" id="insGcBtn"></button></div>` : ""));
+  updateGroupBtn();
+  if ($("insUseNeed")) $("insUseNeed").onchange = e => { insUseNeed = e.target.checked; updateGroupBtn(); };
+  if ($("insUseFirst")) $("insUseFirst").onchange = e => { insUseFirst = e.target.checked; updateGroupBtn(); };
+  // All-time hard words: words that most students have missed at least once, at any point, even if they know them now.
+  const HARD_MIN_STUDENTS = 2, HARD_MIN_SHARE = 0.5, HARD_MAX = 20;
+  const hard = list.map(w => {
+    let checked = 0, ever = 0, misses = 0;
+    ss.forEach(st => { const e = st.words[w]; if (!e) return; checked++; const m = Math.max(e.miss || 0, e.first === "no" ? 1 : 0); if (m > 0) { ever++; misses += m; } });
+    return { w, checked, ever, misses };
+  }).filter(r => r.ever >= HARD_MIN_STUDENTS && r.ever / r.checked >= HARD_MIN_SHARE)
+    .sort((a, b) => b.ever / b.checked - a.ever / a.checked || b.ever - a.ever || b.misses - a.misses).slice(0, HARD_MAX);
+  insHardWords = hard.map(r => r.w);
+  $("insHard").innerHTML = `<h2>All-time hard words</h2>` + (ss.length < 2
+    ? `<p class="status">This needs at least 2 students. Add another student to see words that have been tricky for several of them.</p>`
+    : `<p style="margin:0 0 6px">Words that at least half the students who have checked them have missed at some point, even if they know them now. The count is students who ever missed the word out of students who checked it, then total misses.</p>`
+      + (hard.length ? `<div class="chips">${hard.map(r => `<span class="chip r">${esc(r.w)} · ${r.ever} of ${r.checked} · ${r.misses} miss${r.misses === 1 ? "" : "es"}</span>`).join("")}</div>
+         <p class="status" style="margin:0 0 8px">Miss counts start from this update. For earlier sessions, only a word missed at its first check is known, so older counts may be low.</p>
+         <div><button class="btn yellow" id="insHardBtn">Print Game Cards for these ${hard.length} words</button></div>` : `<p class="status">No word has been missed by 2 or more students yet.</p>`));
   renderWeekPanel();
+  if ($("insHardBtn")) $("insHardBtn").onclick = () => { renderGameCards(true, insHardWords, "hard"); show("gamecards"); };
   if ($("insGcBtn")) $("insGcBtn").onclick = () => { renderGameCards(true); show("gamecards"); };
   // Per student
   const info = ss.map(st => {
@@ -1719,10 +1752,10 @@ function gcFill(list) {
 const GC_STEPS = ["Shuffle the cards and put them face down in a pile.", "Take turns. Draw a card and read the word.", "Read it right? Put the card in your backpack (keep it).", "Not yet? Say the word together and put the card at the bottom of the pile.", "Draw a lost! card? You took a wrong turn. Put all your cards back in the pile and shuffle.|Place the lost! card off to the side, not back in the center pile.", "Play until the cards run out or for 10 minutes. Count your backpack cards."];
 const GC_PICS = [["🎒", "hiking backpack"], ["🥾", "hiking boot"], ["🧭", "compass"], ["⛺", "tent"], ["🌲", "pine tree"], ["🗺️", "trail map"]];
 let gcFromIns = false;
-function renderGameCards(group) {
+function renderGameCards(group, words, kind) {
   const st = group ? { name: "Group set" } : cur(); if (!st) return;
   gcFromIns = !!group; $("gcAgain").hidden = !!group;
-  const col = group ? ["gold", "#e6a817"] : studentColor(st), picks = group ? gcFill(insGroupWords.map(w => ({ w, k: "group" }))) : gcPick(st);
+  const col = group ? ["gold", "#e6a817"] : studentColor(st), picks = group ? gcFill((words || insGroupWords).map(w => ({ w, k: "group" }))) : gcPick(st);
   const pi = ((group ? state.groupSet : st.gcSet) || 0) % GC_PICS.length, pic = GC_PICS[pi];
   gcCurrent = { st, picks, color: col[1], pic: pic[0], pi, group: !!group };
   const fs = w => w.length <= 4 ? 27 : w.length <= 6 ? 23 : w.length <= 8 ? 19 : 15;
@@ -1731,7 +1764,7 @@ function renderGameCards(group) {
   $("gcSheet").innerHTML = `<div class="gcdir"><h2>LOST!: a card game for home</h2><div>Play with 2 or more people. Cut the cards apart. Cards are either practice words or lost! cards.</div><ol>${GC_STEPS.map(t => { const [a, b] = t.split("|"); return `<li>${esc(a)}${b ? ` <b>${esc(b)}</b>` : ""}</li>`; }).join("")}</ol></div>
     <div class="gcgrid">${picks.map(word).join("")}${lost.join("")}</div>`;
   const n = picks.length;
-  if (group) { $("gcNote").textContent = `Group set: ${n} word cards for the words that several students are still working on, plus 4 cards that say lost!. The stripe color is gold. The picture on this set is a ${pic[1]}.`; $("gcLinkRow").hidden = true; return; }
+  if (group) { $("gcNote").textContent = `Group set: ${n} word cards for the ${kind === "hard" ? "all-time hard words that most students have missed" : "words that several students are still working on"}, plus 4 cards that say lost!. The stripe color is gold. The picture on this set is a ${pic[1]}.`; $("gcLinkRow").hidden = true; return; }
   $("gcNote").textContent = n ? `${st.name}'s stripe color is ${col[0]}. ${picks.filter(o => o.k === "pending").length} red, ${picks.filter(o => o.k === "learning").length} yellow and ${picks.filter(o => o.k === "known").length} green words, plus 4 cards that say lost!. The picture on this set is a ${pic[1]}.` + (new Set(picks.map(o => o.w)).size < n ? ` ${st.name} has ${new Set(picks.map(o => o.w)).size} checked words so far, so some words are on more than one card to make ${n} word cards.` : "") : `${st.name} has no checked words yet. Check some words first.`;
   $("gcLinkRow").hidden = true;
 }
